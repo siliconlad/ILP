@@ -5,19 +5,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class App {
-    public static void main( String[] args ) {    	        
+    public static void main( String[] args ) {
+    	// File name is passed as a command-line argument
+        String predictionsFileName = args[0];
+        
 		try {
-	    	// File name is passed as a command-line argument
-	        String predictionsFileName = args[0];
 	        File predictionsFile = new File(predictionsFileName);
 			HeatMap heatMap = new HeatMap(predictionsFile);
 			
-			heatMap.save("testfile.json");
+			heatMap.save("heatmap.geojson");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("The file " + predictionsFileName + " could not be found.");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
