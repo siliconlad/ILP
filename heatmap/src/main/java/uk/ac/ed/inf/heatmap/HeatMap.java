@@ -26,13 +26,11 @@ public class HeatMap {
 	private final double MIN_LONGITUDE = -3.192473;
 	
 	private FeatureCollection heatMap;
-	private ArrayList<Integer> heatMapRaw;
 	
 	public HeatMap(File file) throws FileNotFoundException {
-		Scanner fileReader;
 		try {
-			fileReader = new Scanner(file);
-			heatMapRaw = processFileContents(fileReader);
+			var fileReader = new Scanner(file);
+			var heatMapRaw = processFileContents(fileReader);
 			heatMap = createHeatMap(heatMapRaw);
 			fileReader.close();
 		} catch (FileNotFoundException e) {
@@ -40,10 +38,10 @@ public class HeatMap {
 		}
 	}
 	
-    // Return heat map as a FeatureCollection
-    public FeatureCollection getFeatureCollection() {
-    	return heatMap;
-    }
+  // Return heat map as a FeatureCollection
+  public FeatureCollection getFeatureCollection() {
+  	return heatMap;
+  }
 	
     // Return heat map in JSON format
 	public String getJson() {
@@ -53,7 +51,7 @@ public class HeatMap {
 	// Save heat map in a file
 	public void save(String filename) throws IOException {
 		try {
-			FileWriter saveFile = new FileWriter(filename);
+			var saveFile = new FileWriter(filename);
 			saveFile.write(heatMap.toJson());
 			saveFile.close();
 		} catch (IOException e) {
@@ -64,13 +62,12 @@ public class HeatMap {
 	
 	// Create a heat map from an ArrayList of integers
 	private FeatureCollection createHeatMap(ArrayList<Integer> heatMapGridRaw) {
-		ArrayList<Feature> heatMapGrid = createEmptyGrid(WIDTH, HEIGHT);
-		
-		Feature currentFeature;
-		String hexColor;
+		var heatMapGrid = createEmptyGrid(WIDTH, HEIGHT);
+	
 		for (int i = 0; i < heatMapGridRaw.size(); i++) {
-			currentFeature = heatMapGrid.get(i);
-			hexColor = getHexColor(heatMapGridRaw.get(i));
+			var currentFeature = heatMapGrid.get(i);
+			var hexColor = getHexColor(heatMapGridRaw.get(i));
+			
 			currentFeature.addNumberProperty("fill-opacity", 0.75);
 			currentFeature.addStringProperty("rgb-string", hexColor);
 			currentFeature.addStringProperty("fill", hexColor);
@@ -81,13 +78,12 @@ public class HeatMap {
 	
 	// Convert file contents into an ArrayList of integers
 	private ArrayList<Integer> processFileContents(Scanner fileReader) {
-		ArrayList<Integer> heatMapGridRaw = new ArrayList<Integer>();
+		var heatMapGridRaw = new ArrayList<Integer>();
 		
-		String[] currentLine;
 		while (fileReader.hasNextLine()) {
-			currentLine = fileReader.nextLine().split(",");
+			var currentLine = fileReader.nextLine().split(",");
 			
-			for (String item : currentLine) {
+			for (var item : currentLine) {
 				item = item.strip();
 				heatMapGridRaw.add(Integer.parseInt(item));
 			}
@@ -97,31 +93,32 @@ public class HeatMap {
 	}
 	
 	private ArrayList<Feature> createEmptyGrid(int width, int height) {
-		ArrayList<Feature> emptyGrid = new ArrayList<Feature>();
+		var emptyGrid = new ArrayList<Feature>();
 		
-		double longitude_step = (MAX_LONGITUDE - MIN_LONGITUDE) / width;
-		double latitude_step = (MAX_LATITUDE - MIN_LATITUDE) / height;
+		var longitude_step = (MAX_LONGITUDE - MIN_LONGITUDE) / width;
+		var latitude_step = (MAX_LATITUDE - MIN_LATITUDE) / height;
 		
-		// Initialise the four latitude and longitude values for the first grid
-		double left_longitude = MIN_LONGITUDE;
-		double right_longitude = MIN_LONGITUDE + longitude_step;
-		double top_latitude = MAX_LATITUDE;
-		double bottom_latitude = MAX_LATITUDE - latitude_step;
+		// Initialise the latitude values for the top row
+		var top_latitude = MAX_LATITUDE;
+		var bottom_latitude = MAX_LATITUDE - latitude_step;
 		
-		for (int i = 0; i < height; i++) {			
-			for (int j = 0; j < width; j++) {	
-				ArrayList<Point> cellPoints = new ArrayList<Point>();
-				
-				// Add the four points of a cell
+		for (int i = 0; i < height; i++) {
+      // Initialise the longitude values for the start of the row
+      var left_longitude = MIN_LONGITUDE;
+      var right_longitude = MIN_LONGITUDE + longitude_step;
+      
+			for (int j = 0; j < width; j++) {
+		    // Add the four points of a cell
+		    var cellPoints = new ArrayList<Point>();
 				cellPoints.add(Point.fromLngLat(left_longitude, top_latitude));
 				cellPoints.add(Point.fromLngLat(left_longitude, bottom_latitude));
 				cellPoints.add(Point.fromLngLat(right_longitude, bottom_latitude));
 				cellPoints.add(Point.fromLngLat(right_longitude, top_latitude));
 				
 				// Convert to feature
-				Polygon cellPolygon = Polygon.fromLngLats(List.of(cellPoints));			
-				Geometry cellGeometry = (Geometry) cellPolygon;
-				Feature  cellFeature = Feature.fromGeometry(cellGeometry);
+				var cellPolygon = Polygon.fromLngLats(List.of(cellPoints));			
+				var cellGeometry = (Geometry) cellPolygon;
+				var cellFeature = Feature.fromGeometry(cellGeometry);
 				emptyGrid.add(cellFeature);
 				
 				// Shift to next grid cell on the same latitude (row)
@@ -132,20 +129,13 @@ public class HeatMap {
 			// Move latitude down (go to next row down)
 			top_latitude = bottom_latitude;
 			bottom_latitude -= latitude_step;
-			
-			// Reset longitude values
-			left_longitude = MIN_LONGITUDE;
-			right_longitude = MIN_LONGITUDE + longitude_step;
 		}
 		
 		return emptyGrid;
 	}
 	
 	private String getHexColor(double value) {
-		if (value < 0) {
-			return "#000000";
-		}
-		else if (value < 32) {
+		if (0 <= value && value < 32) {
 			return "#00ff00";
 		}
 		else if (value < 64) {
