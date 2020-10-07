@@ -11,7 +11,7 @@ public class App {
 
 		try {
 			var predictionsFile = new File(predictionsFileName);
-			var heatMap = new HeatMap(predictionsFile);
+			var heatMap = new HeatMapGrid(predictionsFile, 10, 10);
 			heatMap.save("heatmap.geojson");
 		} catch (FileNotFoundException e) {
 			System.out.println("The file " + predictionsFileName + " could not be found.");
