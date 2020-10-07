@@ -59,9 +59,8 @@ public class HeatMapGrid {
     }
   }
 
-  // Process file contents into a linearised array
+  // Process file contents into a flattened grid (row-wise)
   private ArrayList<Integer> processFileContents(Scanner fileReader) {
-    // To store the values of the input file
     var heatMapGridRaw = new ArrayList<Integer>();
 
     // Keeps track of the number of lines read
@@ -74,10 +73,10 @@ public class HeatMapGrid {
         break;
       }
 
-      currentLineNumber += 1;
-
       var heatMapGridRawRow = processFileLine(fileReader.nextLine(), currentLineNumber);
       heatMapGridRaw.addAll(heatMapGridRawRow);
+      
+      currentLineNumber += 1;
     }
 
     // Pad with extra rows if file doesn't have enough lines
@@ -94,11 +93,10 @@ public class HeatMapGrid {
     return heatMapGridRaw;
   }
 
-  // Process a file line string into an ArrayList of WIDTH integers
+  // Process a file line string into an integer ArrayList of length WIDTH
   private ArrayList<Integer> processFileLine(String fileLine, int line_number) {
     var heatMapGridRow = new ArrayList<Integer>();
 
-    // Split line into an array of Strings
     var currentLine = fileLine.split(",");
 
     // Let user know if the length of the line is incorrect
@@ -127,7 +125,7 @@ public class HeatMapGrid {
     return heatMapGridRow;
   }
 
-  // Populate an empty grid with information based on the input array
+  // Populate a (row-wise) flattened empty grid with information based on the input array
   private FeatureCollection createHeatMap(ArrayList<Integer> heatMapGridRaw) {
     // Get the row-wise flattened grid  
     var emptyHeatMapGrid = createEmptyGrid(WIDTH, HEIGHT);
