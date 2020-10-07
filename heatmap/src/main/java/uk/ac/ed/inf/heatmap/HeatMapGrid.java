@@ -55,12 +55,13 @@ public class HeatMapGrid {
       saveFile.write(heatMapGrid.toJson());
       saveFile.close();
     } catch (IOException e) {
-      throw new IOException("Failed to create the new file " + filename);
+      throw new IOException("Save operation failed.");
     }
   }
 
   // Process file contents into a flattened grid (row-wise)
   private ArrayList<Integer> processFileContents(Scanner fileReader) {
+    // To store the contents of the file
     var heatMapGridRaw = new ArrayList<Integer>();
 
     // Keeps track of the number of lines read
@@ -72,11 +73,11 @@ public class HeatMapGrid {
         System.out.println("File has too many lines. Trimming...");
         break;
       }
+      
+      currentLineNumber += 1;
 
       var heatMapGridRawRow = processFileLine(fileReader.nextLine(), currentLineNumber);
       heatMapGridRaw.addAll(heatMapGridRawRow);
-      
-      currentLineNumber += 1;
     }
 
     // Pad with extra rows if file doesn't have enough lines
@@ -93,9 +94,10 @@ public class HeatMapGrid {
     return heatMapGridRaw;
   }
 
-  // Process a file line string into an integer ArrayList of length WIDTH
+  // Process a file line into an integer ArrayList of length WIDTH
   private ArrayList<Integer> processFileLine(String fileLine, int line_number) {
-    var heatMapGridRow = new ArrayList<Integer>();
+    // To store the contents of the row
+    var heatMapGridRowRaw = new ArrayList<Integer>();
 
     var currentLine = fileLine.split(",");
 
@@ -111,18 +113,18 @@ public class HeatMapGrid {
       try {
         var currentItem = currentLine[i].strip();
         var currentInteger = Integer.parseInt(currentItem);
-        heatMapGridRow.add(currentInteger);
+        heatMapGridRowRaw.add(currentInteger);
       } catch(ArrayIndexOutOfBoundsException e) {
         // If line is too short, pad with -1
-        heatMapGridRow.add(-1);
+        heatMapGridRowRaw.add(-1);
       } catch (NumberFormatException e) {
         // If currentItem is not a valid integer, replace with -1
         System.out.println("Encountered an invalid number. Replacing with -1...");
-        heatMapGridRow.add(-1);
+        heatMapGridRowRaw.add(-1);
       }
     }
 
-    return heatMapGridRow;
+    return heatMapGridRowRaw;
   }
 
   // Populate a (row-wise) flattened empty grid with information based on the input array
@@ -145,8 +147,9 @@ public class HeatMapGrid {
     return FeatureCollection.fromFeatures(emptyHeatMapGrid);
   }
 
-  // Create an empty Geo-JSON grid based on the width and height
+  // Create an empty row-wise flattened Geo-JSON grid based on the width and height
   private ArrayList<Feature> createEmptyGrid(int width, int height) {
+    // To store the row-wise flattened Geo-JSON grid
     var emptyGrid = new ArrayList<Feature>();
 
     // Calculate the size of the cells
