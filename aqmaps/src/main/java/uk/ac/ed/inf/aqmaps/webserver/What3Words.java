@@ -1,5 +1,7 @@
 package uk.ac.ed.inf.aqmaps.webserver;
 
+import uk.ac.ed.inf.aqmaps.Point;
+
 public class What3Words {
   public String country;
   public Square square;
@@ -12,11 +14,6 @@ public class What3Words {
   public static class Square {
     Point southwest;
     Point northeast;
-  }
-  
-  public static class Point {
-    double lng;
-    double lat;
   }
   
 }
