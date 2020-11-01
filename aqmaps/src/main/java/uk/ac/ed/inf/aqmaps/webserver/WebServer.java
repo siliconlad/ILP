@@ -44,14 +44,14 @@ public class WebServer {
   }
   
   
-  public ArrayList<What3Words> getWhat3Words(String first, String second, String third) throws SendRequestException, ResponseException {
-    var filePath = "words/" + first + "/" + second + "/" + third + "/" + "details.json";
+  public What3Words getWhat3WordsDetails(String location) throws SendRequestException, ResponseException {
+    var words = location.split(".");
+    var filePath = "words/" + words[0] + "/" + words[1] + "/" + words[2] + "/" + "details.json";
     var response = sendRequest(filePath);
     
-    // Process JSON into an array of objects
-    Type listType =  new TypeToken<ArrayList<What3Words>>() {}.getType();
-    ArrayList<What3Words> what3WordsList = new Gson().fromJson(response.body(), listType);
-    return what3WordsList;
+    // Process JSON into What3Words object
+    var what3WordsDetails = new Gson().fromJson(response.body(), What3Words.class);
+    return what3WordsDetails;
   }
   
   
