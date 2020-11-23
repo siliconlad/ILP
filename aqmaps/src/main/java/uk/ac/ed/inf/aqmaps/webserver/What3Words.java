@@ -1,7 +1,5 @@
 package uk.ac.ed.inf.aqmaps.webserver;
 
-import uk.ac.ed.inf.aqmaps.Coordinates;
-
 public class What3Words {
   public String country;
   public Square square;
