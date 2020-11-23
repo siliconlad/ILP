@@ -45,7 +45,7 @@ public class WebServer {
   
   
   public What3Words getWhat3WordsDetails(String location) throws SendRequestException, ResponseException {
-    var words = location.split(".");
+    var words = location.split("\\.");
     var filePath = "words/" + words[0] + "/" + words[1] + "/" + words[2] + "/" + "details.json";
     var response = sendRequest(filePath);
     
