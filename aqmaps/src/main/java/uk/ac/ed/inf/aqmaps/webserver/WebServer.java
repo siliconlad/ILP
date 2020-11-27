@@ -18,7 +18,7 @@ import uk.ac.ed.inf.aqmaps.drone.Sensor;
 
 public class WebServer {
   private final HttpClient client = HttpClient.newHttpClient();
-  private final String noFlyZonePath = "buildings/no-fly-zones.geojeson";
+  private final String noFlyZonePath = "buildings/no-fly-zones.geojson";
 
   private String protocol;
   private String host;
