@@ -7,8 +7,6 @@ import java.io.IOException;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 
-import uk.ac.ed.inf.aqmaps.webserver.Coordinates;
-
 public class GreedyDrone {
   // Constants as defined in the specification
   private static final double MAX_SENSOR_RANGE = 0.0002;

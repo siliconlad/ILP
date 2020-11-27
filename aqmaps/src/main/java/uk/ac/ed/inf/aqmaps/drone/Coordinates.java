@@ -1,4 +1,4 @@
-package uk.ac.ed.inf.aqmaps.webserver;
+package uk.ac.ed.inf.aqmaps.drone;
 
 public class Coordinates {
   public double lng;  // Longitude

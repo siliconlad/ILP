@@ -1,7 +1,5 @@
 package uk.ac.ed.inf.aqmaps.drone;
 
-import uk.ac.ed.inf.aqmaps.webserver.Coordinates;
-
 public class Sensor {
   // The What3Words location of the sensor
   public String location;

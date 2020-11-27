@@ -1,7 +1,5 @@
 package uk.ac.ed.inf.aqmaps.drone;
 
-import uk.ac.ed.inf.aqmaps.webserver.Coordinates;
-
 public class PathPoint {
   public Coordinates startPos;
   public Coordinates endPos;
