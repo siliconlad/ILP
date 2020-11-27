@@ -1,19 +1,20 @@
 package uk.ac.ed.inf.aqmaps.drone;
 
 public class Sensor {
-  // The What3Words location of the sensor
   public String location;
-  // The battery level of the sensor
-  public double battery;
-  // The pollution reading from the sensor
+  public Double battery;
   public String reading;
-  // The coordinates of the sensor as an object
   public Coordinates coordinates;
   
-  public Sensor(String loc, double battery, String reading, Coordinates coordinates) {
-    this.location = loc;
-    this.battery = battery;
-    this.reading = reading;
-    this.coordinates = coordinates;
+  @Override
+  public String toString()  {
+    // Coordinates may not be straight away
+    var coordinatesString = (this.coordinates == null) ? "null" : this.coordinates.toString();
+    
+    return "Sensor Object" + "\n" +
+           "Location: " + this.location + "\n" + 
+           "Battery: " + this.battery + "\n" +
+           "Reading: " + this.reading + "\n" +
+           "Coordinates: " + coordinatesString;
   }
 }

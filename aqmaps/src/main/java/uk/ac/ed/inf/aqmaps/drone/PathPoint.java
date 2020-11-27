@@ -3,12 +3,17 @@ package uk.ac.ed.inf.aqmaps.drone;
 public class PathPoint {
   public Coordinates startPos;
   public Coordinates endPos;
-  public int direction;
+  public Integer direction;
   public Sensor sensor;
-  public double distanceScore;
+  public Double distanceScore;
   
+  @Override
   public String toString() {
-    var sensorString = (this.sensor == null) ? "null" : sensor.location;
-    return this.startPos.toString() + "," + Integer.toString(this.direction) + "," + this.endPos.toString() + "," + sensorString;
+    // May not be initialized in the beginning
+    var endPosString = (this.endPos == null) ? "null" : this.endPos.toString();
+    var directionString = (this.direction == null) ? "null" : this.direction.toString();
+    var sensorString = (this.sensor == null) ? "null" : this.sensor.location;
+
+    return this.startPos.toString() + "," + directionString + "," + endPosString + "," + sensorString;
   }
 }
