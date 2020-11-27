@@ -14,6 +14,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mapbox.geojson.FeatureCollection;
 
+import uk.ac.ed.inf.aqmaps.drone.Sensor;
+
 public class WebServer {
   private final HttpClient client = HttpClient.newHttpClient();
   private final String noFlyZonePath = "buildings/no-fly-zones.geojeson";
@@ -28,16 +30,16 @@ public class WebServer {
     this.port = port;
   }
   
-  public ArrayList<SensorInfo> getSensorInfo(String year, String month, String day) throws SendRequestException, ResponseException {
+  public ArrayList<Sensor> getSensors(String year, String month, String day) throws SendRequestException, ResponseException {
     var filePath = "maps/" + year + "/" + month + "/" + day + "/" + "air-quality-data.json";
     var response = this.sendRequest(filePath);
     
     // Process JSON into an array of objects
-    Type listType =  new TypeToken<ArrayList<SensorInfo>>() {}.getType();
-    ArrayList<SensorInfo> sensorInfoList = new Gson().fromJson(response.body(), listType);
+    Type listType =  new TypeToken<ArrayList<Sensor>>() {}.getType();
+    ArrayList<Sensor> sensorInfoList = new Gson().fromJson(response.body(), listType);
     return sensorInfoList;
   }
-  
+
   public What3Words getWhat3WordsDetails(String location) throws SendRequestException, ResponseException {
     var words = location.split("\\.");
     var filePath = "words/" + words[0] + "/" + words[1] + "/" + words[2] + "/" + "details.json";
