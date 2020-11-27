@@ -1,2 +1,4 @@
 /.metadata/
 dependency-reduced-pom.xml
+.project
+target/
