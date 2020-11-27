@@ -1,30 +1,26 @@
 package uk.ac.ed.inf.aqmaps.webserver;
 
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-
 import java.util.ArrayList;
-
-import java.net.ConnectException;
-import java.io.IOException;
-
-import java.lang.reflect.Type;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
 import com.mapbox.geojson.FeatureCollection;
 
-
 public class WebServer {
-  HttpClient client = HttpClient.newHttpClient();
-  String protocol;
-  String host;
-  String port;
-  
+  private final HttpClient client = HttpClient.newHttpClient();
+  private final String noFlyZonePath = "buildings/no-fly-zones.geojeson";
+
+  private String protocol;
+  private String host;
+  private String port;
   
   public WebServer(String protocol, String host, String port) {
     this.protocol = protocol;
@@ -32,10 +28,9 @@ public class WebServer {
     this.port = port;
   }
   
-  
   public ArrayList<SensorInfo> getSensorInfo(String year, String month, String day) throws SendRequestException, ResponseException {
     var filePath = "maps/" + year + "/" + month + "/" + day + "/" + "air-quality-data.json";
-    var response = sendRequest(filePath);
+    var response = this.sendRequest(filePath);
     
     // Process JSON into an array of objects
     Type listType =  new TypeToken<ArrayList<SensorInfo>>() {}.getType();
@@ -43,30 +38,22 @@ public class WebServer {
     return sensorInfoList;
   }
   
-  
   public What3Words getWhat3WordsDetails(String location) throws SendRequestException, ResponseException {
     var words = location.split("\\.");
     var filePath = "words/" + words[0] + "/" + words[1] + "/" + words[2] + "/" + "details.json";
-    var response = sendRequest(filePath);
+    var response = this.sendRequest(filePath);
     
-    // Process JSON into What3Words object
     var what3WordsDetails = new Gson().fromJson(response.body(), What3Words.class);
     return what3WordsDetails;
   }
   
-  
   public FeatureCollection getNoFlyZones() throws SendRequestException, ResponseException {
-    var filePath = "buildings/no-fly-zones.geojson";
-    var response = sendRequest(filePath);
-    
-    // Convert from JSON
+    var response = this.sendRequest(this.noFlyZonePath);
     var noFlyZones = FeatureCollection.fromJson(response.body());
     return noFlyZones;
   }
-  
 
   private HttpResponse<String> sendRequest(String filePath) throws SendRequestException, ResponseException {
-    // Initialise response object to be returned
     HttpResponse<String> response = null;
     
     // Create root of the URL (URL excluding file path) to use in exception messages
@@ -74,7 +61,6 @@ public class WebServer {
     var urlString = urlRoot + "/" + filePath;
     
     try {
-      // Send GET request to server
       var request = HttpRequest.newBuilder().uri(URI.create(urlString)).build();
       response = this.client.send(request, BodyHandlers.ofString());
     } catch (ConnectException e) {
@@ -87,12 +73,10 @@ public class WebServer {
       throw new SendRequestException("IO Exception");
     }
     
-    // Make sure there has been some response from the web server
     if (response == null) {
       throw new ResponseException("HttpResponse is null");
     }
     
-    // Ensure resource was found
     if (response.statusCode() == 404) {
       throw new ResponseException("404 Not Found: " + filePath);
     }
