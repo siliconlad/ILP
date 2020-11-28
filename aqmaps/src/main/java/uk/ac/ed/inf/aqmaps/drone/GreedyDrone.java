@@ -26,7 +26,6 @@ public class GreedyDrone {
   private static final Line2D EAST_BOUNDARY = new Line2D.Double(NORTH_EAST, SOUTH_EAST);
   
   private ArrayList<Sensor> notVisited;
-  private ArrayList<Sensor> unreachable;
   private ArrayList<PathPoint> route;
   private FeatureCollection noFlyZones;
   private Coordinates startPos;
@@ -36,7 +35,6 @@ public class GreedyDrone {
   
   public GreedyDrone(ArrayList<Sensor> sensors, Coordinates startPos, FeatureCollection noFlyZones) {
     this.notVisited = sensors;
-    this.unreachable = new ArrayList<Sensor>();
     this.route = new ArrayList<PathPoint>();
     this.noFlyZones = noFlyZones;
     this.startPos = startPos;
@@ -58,6 +56,8 @@ public class GreedyDrone {
   }
   
   private void calculateRoute() {
+    var skippedSensors = new ArrayList<Sensor>();
+    
     while (this.notVisited.size() > 0) {
       var nextSensor = this.getClosestSensor(this.currentPos, this.notVisited);
       
@@ -75,12 +75,12 @@ public class GreedyDrone {
         } catch (BatteryLimitException e) {
           System.out.println("Would not be able to return to start. Skipping sensor...");
           this.notVisited.remove(nextSensor);
-          this.unreachable.add(nextSensor);
+          skippedSensors.add(nextSensor);
           continue;
         } catch (RouteNotFoundException e) {
           System.out.println("Cannot find path back to start. Skipping sensor...");
           this.notVisited.remove(nextSensor);
-          this.unreachable.add(nextSensor);
+          skippedSensors.add(nextSensor);
           continue;
         }
         
@@ -92,8 +92,8 @@ public class GreedyDrone {
         System.out.println("Battery: " + this.battery);
         
         // Skipped sensors may be reachable after moving to nextSensor so add them back
-        this.notVisited.addAll(this.unreachable);
-        this.unreachable.clear();
+        this.notVisited.addAll(skippedSensors);
+        skippedSensors.clear();
       } catch (BatteryLimitException e) {
         // Return to start because no other accessible sensor is going to be closer
         System.out.println("Route exceeds battery limit. Returning to start...");
@@ -101,7 +101,7 @@ public class GreedyDrone {
       } catch (RouteNotFoundException e) {
         System.out.println("Path planning got stuck. Skipping sensor...");
         this.notVisited.remove(nextSensor);
-        this.unreachable.add(nextSensor);
+        skippedSensors.add(nextSensor);
       }
     }
     
@@ -122,7 +122,7 @@ public class GreedyDrone {
     System.out.println("Battery: " + this.battery);
     
     // notVisited should have all the sensors that were not visited at the end of execution
-    this.notVisited.addAll(this.unreachable);
+    this.notVisited.addAll(skippedSensors);
     if (this.notVisited.size() > 0) {
       System.out.println();
       System.out.println(this.notVisited.size() + " sensors were not were visited.");
