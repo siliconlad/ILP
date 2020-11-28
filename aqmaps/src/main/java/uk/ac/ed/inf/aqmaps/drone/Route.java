@@ -3,27 +3,33 @@ package uk.ac.ed.inf.aqmaps.drone;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import com.mapbox.geojson.Point;
-import com.mapbox.geojson.Geometry;
-import com.mapbox.geojson.LineString;
+
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
-
+import com.mapbox.geojson.Geometry;
+import com.mapbox.geojson.LineString;
+import com.mapbox.geojson.Point;
 
 public class Route {
   
   private ArrayList<PathPoint> dronePath;
   private ArrayList<Sensor> skippedSensors;
+  private ArrayList<Sensor> visitedSensors;
   private FeatureCollection noFlyZones;
   private FeatureCollection map;
   
   public Route(ArrayList<PathPoint> dronePath, ArrayList<Sensor> skippedSensors, FeatureCollection noFlyZones) {
     this.dronePath = dronePath;
     this.skippedSensors = skippedSensors;
+    this.visitedSensors = this.getVisitedSensorsFromDronePath();
     this.noFlyZones = noFlyZones;
   }
   
   public void saveMap(String fileName) throws IOException {
+    if (this.map == null) {
+      throw new RuntimeException("Map not built. Call buildMap method first.");
+    }
+
     var saveFile = new FileWriter(fileName);
     saveFile.write(this.map.toJson());
     saveFile.close();
@@ -31,54 +37,71 @@ public class Route {
   
   public void saveRoute(String fileName) throws IOException{
     var routeFileWriter = new FileWriter(fileName);
-     
+    
     for (var i=0; i < this.dronePath.size(); i++) {
       routeFileWriter.write(Integer.toString(i+1) + "," + this.dronePath.get(i).toString() + '\n');
     }
-     
+    
     routeFileWriter.close();
   }
   
   public void buildMap(boolean showNoFlyZones) {
-    ArrayList<Feature> mapFeatures = new ArrayList<Feature>();
-    ArrayList<Point> mapPathPoints = new ArrayList<Point>();
+    var mapFeatures = new ArrayList<Feature>();
     
-    // Add starting point
-    var startPathPoint = Point.fromLngLat(this.dronePath.get(0).startPos.lng, this.dronePath.get(0).startPos.lat);
-    mapPathPoints.add(startPathPoint);
+    // Add drone path
+    var dronePathFeature = this.createPathFeature();
+    mapFeatures.add(dronePathFeature);
     
-    // Go through drone path adding sensors and points to the map
-    for (var pathPoint : this.dronePath) {
-      // Create marker for sensor if it exists
-      if (pathPoint.sensor != null) {
-        var sensorMarker = this.createSensorMarker(pathPoint.sensor, true);
-        mapFeatures.add(sensorMarker);
-      }
-      
-      var pathPointPoint = Point.fromLngLat(pathPoint.endPos.lng, pathPoint.endPos.lat);
-      mapPathPoints.add(pathPointPoint);
-      
+    // Add visited sensor markers
+    for (var sensor: this.visitedSensors) {
+      var sensorMarker = this.createSensorMarker(sensor, true);
+      mapFeatures.add(sensorMarker);
     }
     
-    // Turn drone path into a Feature to be added to the map
-    var mapPathLineString = LineString.fromLngLats(mapPathPoints);
-    var mapPathGeometry = (Geometry)mapPathLineString;
-    var mapPathFeature = Feature.fromGeometry(mapPathGeometry);
-    mapFeatures.add(mapPathFeature);
-    
-    // Add sensors that were missed by the drone path
+    // Add skipped sensor markers
     for (var sensor: this.skippedSensors) {
       var sensorMarker = this.createSensorMarker(sensor, false);
       mapFeatures.add(sensorMarker);
     }
     
-    // Include no fly zones if requested
+    // Show no fly zones
     if (showNoFlyZones) {
       mapFeatures.addAll(this.noFlyZones.features());
     }
     
     this.map = FeatureCollection.fromFeatures(mapFeatures);
+  }
+  
+  private ArrayList<Sensor> getVisitedSensorsFromDronePath() {
+    var visitedSensors = new ArrayList<Sensor>();
     
+    for (var pathPoint : this.dronePath) {
+      if (pathPoint.sensor != null) {
+        visitedSensors.add(pathPoint.sensor);
+      }
+    }
+    
+    return visitedSensors;
+  }
+  
+  private Feature createPathFeature() {
+    var mapPathPoints = new ArrayList<Point>();
+    
+    if (this.dronePath.size() > 0) {
+      var startPathPoint = Point.fromLngLat(this.dronePath.get(0).startPos.lng, this.dronePath.get(0).startPos.lat);
+      mapPathPoints.add(startPathPoint);
+    }
+
+    for (var pathPoint : this.dronePath) {      
+      var pathPointPoint = Point.fromLngLat(pathPoint.endPos.lng, pathPoint.endPos.lat);
+      mapPathPoints.add(pathPointPoint);
+    }
+    
+    var mapPathLineString = LineString.fromLngLats(mapPathPoints);
+    var mapPathGeometry = (Geometry)mapPathLineString;
+    var mapPathFeature = Feature.fromGeometry(mapPathGeometry);
+    
+    return mapPathFeature;
   }
   
   private Feature createSensorMarker(Sensor sensor, boolean visited) {
@@ -99,7 +122,6 @@ public class Route {
   }
   
   private String getHexColor(Sensor sensor, boolean visited) {
-    // Sensor was not visited by the drone
     if (!visited) {
       return "#aaaaaa";
     }
@@ -109,7 +131,7 @@ public class Route {
       return "#000000";
     }
     
-    // Sensor reading should be a double
+    // Sensor reading must now be a double
     var sensorReading = Double.parseDouble(sensor.reading);
     if (sensorReading < 0) {
       return "#000000";
@@ -136,28 +158,26 @@ public class Route {
   }
   
   private String getMarkerSymbol(Sensor sensor, boolean visited) {
-   // Sensor was not visited by the drone
-   if (!visited) {
-     return "";
-   }
+    if (!visited) {
+      return "";
+    }
    
-   // Battery too low, hence reading is unreliable
-   if (sensor.battery < 10) {
-     return "cross";
-   } 
+    // Battery too low, hence reading is unreliable
+    if (sensor.battery < 10) {
+      return "cross";
+    } 
    
-   // Sensor reading should be a double
-   var sensorReading = Double.parseDouble(sensor.reading);
-   if (sensorReading < 0) {
-     return "cross";
-   } else if (sensorReading < 128) {
-     return "lighthouse";
-   } else if (sensorReading < 256) {
-     return "danger";
-   }
+    // Sensor reading must now be a double
+    var sensorReading = Double.parseDouble(sensor.reading);
+    if (sensorReading < 0) {
+      return "cross";
+    } else if (sensorReading < 128) {
+      return "lighthouse";
+    } else if (sensorReading < 256) {
+      return "danger";
+    }
    
-   // Default to the cross symbol to indicate faulty sensor
-   return "cross";
- }
-  
+    // Default to the cross symbol to indicate faulty sensor
+    return "cross";
+  } 
 }
