@@ -64,15 +64,23 @@ public class GreedyDrone {
       System.out.println("Target pos: " + nextSensor.coordinates.toString());
       System.out.println("Current pos: " + currentPos.toString());
       
-      var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
-
-      // TODO: Check for battery
       
-      // Update state
-      this.route.addAll(routeToSensor);
-      this.battery -= routeToSensor.size();
-      this.notVisited.remove(nextSensor);
-      this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
+      try {
+        var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
+
+        // TODO: Check for battery
+        
+        // Update state
+        this.route.addAll(routeToSensor);
+        this.battery -= routeToSensor.size();
+        this.notVisited.remove(nextSensor);
+        this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
+        System.out.println("Battery: " + this.battery);
+      } catch (BatteryLimitException e) {
+        System.out.println("Route exceeds battery limit.");
+      } catch (RouteNotFoundException e) {
+        System.out.println(e.getMessage());
+      }
     }
     
     // Once we visit each node return to the beginning
@@ -99,15 +107,30 @@ public class GreedyDrone {
     return closestSensor;
   }
  
-  private ArrayList<PathPoint> getRouteToSensor(Coordinates currentPos, Sensor sensor) {
+  private ArrayList<PathPoint> getRouteToSensor(Coordinates currentPos, Sensor sensor) throws BatteryLimitException, RouteNotFoundException {
     var routeToSensor = new ArrayList<PathPoint>();
     
     // Specification requires movement before reaching sensor
     do {
       var nextPoint = this.getNextPathPoint(currentPos, sensor.coordinates);
+      
+      // Check to see if algorithm is stuck in a loop
+      var routeLength = routeToSensor.size();
+      if (routeLength > 0) {
+        var currDirection = routeToSensor.get(routeLength - 1).direction;
+        if (currDirection == (nextPoint.direction + 180) % 360) {
+          throw new RouteNotFoundException("Greedy algorithm got stuck in loop.");
+        }
+      }
+      
       currentPos = nextPoint.endPos;
       routeToSensor.add(nextPoint);
-      System.out.println("Current pos: " + currentPos.toString());
+      System.out.println("Move to: " + currentPos.toString());
+      
+      if (routeToSensor.size() > this.battery) {
+        throw new BatteryLimitException("Route exceeds battery limit");
+      }
+      
     } while (getDistance(currentPos, sensor.coordinates) >= MAX_SENSOR_RANGE);
     
     routeToSensor.get(routeToSensor.size() - 1).sensor = sensor;
