@@ -9,7 +9,7 @@ public class PathPoint {
   
   @Override
   public String toString() {
-    // May not be initialized in the beginning
+    // May not be initialised in the beginning
     var endPosString = (this.endPos == null) ? "null" : this.endPos.toString();
     var directionString = (this.direction == null) ? "null" : this.direction.toString();
     var sensorString = (this.sensor == null) ? "null" : this.sensor.location;

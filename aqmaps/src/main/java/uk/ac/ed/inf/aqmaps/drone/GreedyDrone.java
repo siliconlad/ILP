@@ -60,7 +60,8 @@ public class GreedyDrone {
       var nextSensor = this.getClosestSensor(this.currentPos, this.notVisited);
       
       System.out.println();
-      System.out.println("Next target: " + nextSensor.location + " " + nextSensor.coordinates.toString());
+      System.out.println("Next target: " + nextSensor.location);
+      System.out.println("Target pos: " + nextSensor.coordinates.toString());
       System.out.println("Current pos: " + currentPos.toString());
       
       var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
@@ -75,7 +76,10 @@ public class GreedyDrone {
     }
     
     // Once we visit each node return to the beginning
-    route.addAll(this.getRouteToTarget(this.currentPos, this.startPos));
+    var routeToStart = this.getRouteToTarget(this.currentPos, this.startPos);
+    route.addAll(routeToStart);
+    this.battery -= routeToStart.size();
+    this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
     System.out.println("Battery: " + this.battery);
     
   }
@@ -167,7 +171,6 @@ public class GreedyDrone {
     return true;
   }
     
-  
   private static ArrayList<Line2D> getBoundaryLines(FeatureCollection noFlyZones) {
     var boundaryLines = new ArrayList<Line2D>();
     
