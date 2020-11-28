@@ -26,6 +26,7 @@ public class GreedyDrone {
   private static final Line2D EAST_BOUNDARY = new Line2D.Double(NORTH_EAST, SOUTH_EAST);
   
   private ArrayList<Sensor> notVisited;
+  private ArrayList<Sensor> unreachable;
   private ArrayList<PathPoint> route;
   private FeatureCollection noFlyZones;
   private Coordinates startPos;
@@ -35,6 +36,7 @@ public class GreedyDrone {
   
   public GreedyDrone(ArrayList<Sensor> sensors, Coordinates startPos, FeatureCollection noFlyZones) {
     this.notVisited = sensors;
+    this.unreachable = new ArrayList<Sensor>();
     this.route = new ArrayList<PathPoint>();
     this.noFlyZones = noFlyZones;
     this.startPos = startPos;
@@ -64,11 +66,23 @@ public class GreedyDrone {
       System.out.println("Target pos: " + nextSensor.coordinates.toString());
       System.out.println("Current pos: " + currentPos.toString());
       
-      
       try {
         var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
 
-        // TODO: Check for battery
+        // Ensure we can always return to the start
+        try {
+          this.getRouteToTarget(routeToSensor.get(routeToSensor.size() - 1).endPos, this.startPos);
+        } catch (BatteryLimitException e) {
+          System.out.println("Would not be able to return to start. Skipping sensor...");
+          this.notVisited.remove(nextSensor);
+          this.unreachable.add(nextSensor);
+          continue;
+        } catch (RouteNotFoundException e) {
+          System.out.println("Cannot find path back to start. Skipping sensor...");
+          this.notVisited.remove(nextSensor);
+          this.unreachable.add(nextSensor);
+          continue;
+        }
         
         // Update state
         this.route.addAll(routeToSensor);
@@ -76,20 +90,44 @@ public class GreedyDrone {
         this.notVisited.remove(nextSensor);
         this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
         System.out.println("Battery: " + this.battery);
+        
+        // Skipped sensors may be reachable after moving to nextSensor so add them back
+        this.notVisited.addAll(this.unreachable);
+        this.unreachable.clear();
       } catch (BatteryLimitException e) {
-        System.out.println("Route exceeds battery limit.");
+        // Return to start because no other accessible sensor is going to be closer
+        System.out.println("Route exceeds battery limit. Returning to start...");
+        break;
       } catch (RouteNotFoundException e) {
-        System.out.println(e.getMessage());
+        System.out.println("Path planning got stuck. Skipping sensor...");
+        this.notVisited.remove(nextSensor);
+        this.unreachable.add(nextSensor);
       }
     }
     
-    // Once we visit each node return to the beginning
-    var routeToStart = this.getRouteToTarget(this.currentPos, this.startPos);
-    route.addAll(routeToStart);
-    this.battery -= routeToStart.size();
-    this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
+    System.out.println();
+    System.out.println("Returning to start...");
+
+    try {
+      var routeToStart = this.getRouteToTarget(this.currentPos, this.startPos);
+      route.addAll(routeToStart);
+      this.battery -= routeToStart.size();
+      this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
+    } catch (BatteryLimitException | RouteNotFoundException e) {
+      System.out.println();
+      System.out.println("FAILED to return to start.");
+      System.out.println();
+    }
+
     System.out.println("Battery: " + this.battery);
     
+    // notVisited should have all the sensors that were not visited at the end of execution
+    this.notVisited.addAll(this.unreachable);
+    if (this.notVisited.size() > 0) {
+      System.out.println();
+      System.out.println(this.notVisited.size() + " sensors were not were visited.");
+      System.out.println();
+    }
   }
   
   private Sensor getClosestSensor(Coordinates currentPos, ArrayList<Sensor> sensors) {
@@ -139,15 +177,30 @@ public class GreedyDrone {
     return routeToSensor;
   }
   
-  private ArrayList<PathPoint> getRouteToTarget(Coordinates currentPos, Coordinates target) {
+  private ArrayList<PathPoint> getRouteToTarget(Coordinates currentPos, Coordinates target) throws BatteryLimitException, RouteNotFoundException {
     var routeToStart = new ArrayList<PathPoint>();
     
+    System.out.println("Current pos: " + currentPos.toString());
+    
     while (getDistance(currentPos, target) >= MAX_FINISH_RANGE) {
-      // Construct route one move at a time
       var nextPoint = this.getNextPathPoint(currentPos, target);
-      routeToStart.add(nextPoint);
+      
+      // Check to see if algorithm is stuck in a loop
+      var routeLength = routeToStart.size();
+      if (routeLength > 0) {
+        var currDirection = routeToStart.get(routeLength - 1).direction;
+        if (currDirection == (nextPoint.direction + 180) % 360) {
+          throw new RouteNotFoundException("Greedy algorithm got stuck in loop.");
+          }
+      }
+      
       currentPos = nextPoint.endPos;
-      System.out.println("Current pos: " + currentPos.toString());
+      routeToStart.add(nextPoint);
+      System.out.println("Move to: " + currentPos.toString());
+      
+      if (routeToStart.size() > this.battery) {
+        throw new BatteryLimitException("Route exceeds battery limit");
+      }
     }
     
     return routeToStart;
