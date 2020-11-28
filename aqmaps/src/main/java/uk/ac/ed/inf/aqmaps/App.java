@@ -36,7 +36,7 @@ public class App
           
           var drone = new GreedyDrone(sensors, startPos, noFlyZones);
           var droneRoute = drone.getRoute();
-          droneRoute.buildMap(false);
+          droneRoute.buildMap(true);
           droneRoute.saveMap("readings-" + day + "-" + month + "-" + year + ".geojson");
           droneRoute.saveRoute("flightpath-" + day + "-" + month + "-" + year + ".txt");
           
