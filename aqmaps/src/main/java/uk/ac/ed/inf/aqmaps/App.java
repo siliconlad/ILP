@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import uk.ac.ed.inf.aqmaps.drone.Coordinates;
-import uk.ac.ed.inf.aqmaps.drone.GreedyDrone;
+import uk.ac.ed.inf.aqmaps.drone.AStarDrone;
 import uk.ac.ed.inf.aqmaps.drone.Sensor;
 import uk.ac.ed.inf.aqmaps.webserver.ResponseException;
 import uk.ac.ed.inf.aqmaps.webserver.SendRequestException;
@@ -34,7 +34,7 @@ public class App
           
           var noFlyZones = webServer.getNoFlyZones();
           
-          var drone = new GreedyDrone(sensors, startPos, noFlyZones);
+          var drone = new AStarDrone(sensors, startPos, noFlyZones);
           var droneRoute = drone.getRoute();
           droneRoute.buildMap(true);
           droneRoute.saveMap("readings-" + day + "-" + month + "-" + year + ".geojson");
