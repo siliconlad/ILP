@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import com.mapbox.geojson.FeatureCollection;
 
 public class AStarDrone extends Drone {
+  private static final int LIMIT_BRANCHING_FACTOR = 5;
+  
   private ArrayList<Sensor> notVisited;
   private ArrayList<PathPoint> route;
   private FeatureCollection noFlyZones;
@@ -51,8 +53,7 @@ public class AStarDrone extends Drone {
         
         // Ensure we can always return to the start
         try {
-          this.getRouteToTarget(routeToSensor.get(routeToSensor.size() - 1).endPos, this.startPos);
-          this.getRouteToTarget(routeToSensor.get(routeToSensor.size() - 1).endPos, this.startPos);
+          this.getRouteToStart(routeToSensor.get(routeToSensor.size() - 1).endPos);
         } catch (BatteryLimitException e) {
           System.out.println("Would not be able to return to start. Skipping sensor...");
           this.notVisited.remove(nextSensor);
@@ -61,6 +62,10 @@ public class AStarDrone extends Drone {
         }
         
         // Update state
+        
+        if (this.route.size() > 0) {
+          routeToSensor.get(0).prev = this.route.get(this.route.size() - 1);
+        }
         this.route.addAll(routeToSensor);
         this.battery -= routeToSensor.size();
         this.notVisited.remove(nextSensor);
@@ -79,7 +84,12 @@ public class AStarDrone extends Drone {
     
     System.out.println("Returning to start...");
     try {
-      var routeToStart = this.getRouteToTarget(this.currentPos, this.startPos);
+      var routeToStart = this.getRouteToStart(this.currentPos);
+      
+      if (this.route.size() > 0) {
+        routeToStart.get(0).prev = this.route.get(this.route.size() - 1);
+      }
+      
       route.addAll(routeToStart);
       this.battery -= routeToStart.size();
       this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
@@ -110,23 +120,45 @@ public class AStarDrone extends Drone {
   }
   
   private ArrayList<PathPoint> getRouteToSensor(Coordinates currentPos, Sensor sensor) throws BatteryLimitException {
-    var routeToSensor = new ArrayList<PathPoint>();
+    var routeToSensor = this.getRoute(currentPos, sensor.coordinates, MAX_SENSOR_RANGE);
+    
+    if (routeToSensor.size() > this.battery) {
+      throw new BatteryLimitException("Route exceeds battery limit.");
+    }
+  
+    routeToSensor.get(routeToSensor.size() - 1).sensor = sensor;
+    System.out.println("Found path to " + sensor.location);
+    
+    return routeToSensor;
+  }
+  
+  private ArrayList<PathPoint> getRouteToStart(Coordinates currentPos) throws BatteryLimitException {
+    var routeToTarget = new ArrayList<PathPoint>();
+    
+    // Specification does not require us to move before we finish
+    if (getDistance(currentPos, this.startPos) >= MAX_FINISH_RANGE) {
+      routeToTarget = this.getRoute(currentPos, this.startPos, MAX_FINISH_RANGE); 
+    }
+    
+    if (routeToTarget.size() > this.battery) {
+      throw new BatteryLimitException("Route exceeds battery limit.");
+    }
+  
+    return routeToTarget;
+  }
+  
+  private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double max_offset) {
+    var route = new ArrayList<PathPoint>();
     var closedPathPoints = new ArrayList<PathPoint>();
     var openPathPoints = new ArrayList<PathPoint>();
     
     // Create initial path point
     var currentPathPoint = new PathPoint();
-    currentPathPoint.startPos = currentPos;
     currentPathPoint.endPos = currentPos;
-    currentPathPoint.direction = null;
-    currentPathPoint.sensor = null;
     currentPathPoint.distanceTravelled = 0.0;
-    currentPathPoint.distanceScore = 0.0;
-    currentPathPoint.prev = null;
     
-    // Specification requires movement before reaching sensor
     do {
-      var newPathPoints = this.generatePathPoints(currentPathPoint, sensor.coordinates, 5);
+      var newPathPoints = this.generatePathPoints(currentPathPoint, target, LIMIT_BRANCHING_FACTOR);
       for (var pathPoint : newPathPoints) {
         var pointVisited = false;
         
@@ -146,7 +178,7 @@ public class AStarDrone extends Drone {
           continue;
         }
         
-        // If we've already expanded the node the current node must be longer due to fixed step sizes
+        // If we've already expanded the node the current node must be longer due to constant step sizes
         for (var closedPathPoint : closedPathPoints) {            
           if (pathPoint.endPos.equals(closedPathPoint.endPos)) {
             pointVisited = true;
@@ -158,111 +190,28 @@ public class AStarDrone extends Drone {
           continue;
         }
         
+        // Otherwise, we've never seen this point before so add it to the list
         openPathPoints.add(pathPoint);
       }
       
+      // Add current node to the list of expanded nodes
       closedPathPoints.add(currentPathPoint);
-      currentPathPoint = this.getNextPathPoint(openPathPoints, sensor.coordinates);
-      openPathPoints.remove(currentPathPoint);
-    } while (getDistance(currentPathPoint.endPos, sensor.coordinates) >= MAX_SENSOR_RANGE);
-    
-    // Reconstruct path
-    while (currentPathPoint.prev != null) {
-      routeToSensor.add(0, currentPathPoint);
-      currentPathPoint = currentPathPoint.prev;
-    }
-    
-    if (routeToSensor.size() > this.battery) {
-      throw new BatteryLimitException("Route exceeds battery limit.");
-    }
-  
-    routeToSensor.get(routeToSensor.size() - 1).sensor = sensor;
-    System.out.println("Found path to " + sensor.location);
-    
-    return routeToSensor;
-  }
-  
-  private ArrayList<PathPoint> getRouteToTarget(Coordinates currentPos, Coordinates target) throws BatteryLimitException {
-    var routeToTarget = new ArrayList<PathPoint>();
-    var closedPathPoints = new ArrayList<PathPoint>();
-    var openPathPoints = new ArrayList<PathPoint>();
-    
-    // Create initial path point
-    var currentPathPoint = new PathPoint();
-    currentPathPoint.startPos = currentPos;
-    currentPathPoint.endPos = currentPos;
-    currentPathPoint.direction = null;
-    currentPathPoint.sensor = null;
-    currentPathPoint.distanceTravelled = 0.0;
-    currentPathPoint.distanceScore = 0.0;
-    currentPathPoint.prev = null;
-    
-    // Specification requires movement before reaching sensor
-    while (getDistance(currentPathPoint.endPos, target) >= MAX_SENSOR_RANGE) {
-      var newPathPoints = this.generatePathPoints(currentPathPoint, target, 5);
       
-      for (var pathPoint : newPathPoints) {
-        var pointVisited = false;
-        
-        // If we have not yet expanded the path point, the current one may be shorter
-        for (var openPathPoint : openPathPoints) {
-          if (openPathPoint == null) {
-            System.out.println("Open path point is null");
-          } else if (pathPoint == null) {
-            System.out.println("Path point is null");
-          }
-          var lngsEqual = Double.compare(pathPoint.endPos.lng, openPathPoint.endPos.lng);
-          var latsEqual = Double.compare(pathPoint.endPos.lat, openPathPoint.endPos.lat);
-          if (lngsEqual == 0 && latsEqual == 0) {
-            // Replace
-            if (pathPoint.distanceScore < openPathPoint.distanceScore) {
-              openPathPoints.remove(openPathPoint);
-              openPathPoints.add(pathPoint);
-            }
-            pointVisited = true;
-            break;
-          }
-        }
-        
-        if (pointVisited) {
-          continue;
-        }
-        
-        // If we've already expanded the node the current node must be longer due to fixed step sizes
-        for (var closedPathPoint : closedPathPoints) {
-          var lngsEqual = Double.compare(pathPoint.endPos.lng, closedPathPoint.endPos.lng);
-          var latsEqual = Double.compare(pathPoint.endPos.lat, closedPathPoint.endPos.lat);
-          if (lngsEqual == 0 && latsEqual == 0) {
-            pointVisited = true;
-            break;
-          }
-        }
-        
-        if (pointVisited) {
-          continue;
-        }
-        
-        openPathPoints.add(pathPoint);
-      }
-      
-      closedPathPoints.add(currentPathPoint);
+      // Select new node from frontier
       currentPathPoint = this.getNextPathPoint(openPathPoints, target);
       openPathPoints.remove(currentPathPoint);
-    }
+    } while (getDistance(currentPathPoint.endPos, target) >= max_offset);
     
     // Reconstruct path
     while (currentPathPoint.prev != null) {
-      routeToTarget.add(0, currentPathPoint);
+      route.add(0, currentPathPoint);
       currentPathPoint = currentPathPoint.prev;
     }
+    route.get(0).prev = null;
     
-    if (routeToTarget.size() > this.battery) {
-      throw new BatteryLimitException("Route exceeds battery limit.");
-    }
-  
-    return routeToTarget;
+    return route;
   }
-  
+
   private PathPoint getNextPathPoint(ArrayList<PathPoint> nextPathPoints, Coordinates target) {
     var minDistance = Double.POSITIVE_INFINITY;
     PathPoint minPathPoint = null;
@@ -288,9 +237,8 @@ public class AStarDrone extends Drone {
     for (var i=0; i < 360; i += 10) {
       var nextPos = move(currentPos, i);
       var distance = currentPathPoint.distanceTravelled + TRAVEL_DISTANCE;
-      
-      var moveIsValid = isMoveValid(currentPos, nextPos, this.boundaryLines);
-      if (moveIsValid) {
+
+      if (isMoveValid(currentPos, nextPos, this.boundaryLines)) {
         var newPoint = new PathPoint();
         newPoint.startPos = currentPos;
         newPoint.endPos = nextPos;
@@ -304,13 +252,8 @@ public class AStarDrone extends Drone {
     }
     
     // Select the closest `limit` number of path points
-    if (nextPathPoints.size() < limit) {
-      System.out.println("Only " + nextPathPoints.size() + " out of " + limit + " PathPoints could be generated.");
-      limit = nextPathPoints.size();
-    }
-    
     var limitedPathPoints = new ArrayList<PathPoint>();
-    for (var i=0; i < limit; i++) {
+    for (var i=0; i < limit && i < nextPathPoints.size(); i++) {
       var pathPoint = this.getNextPathPoint(nextPathPoints, target);
       limitedPathPoints.add(pathPoint);
       nextPathPoints.remove(pathPoint);
