@@ -1,6 +1,5 @@
 package uk.ac.ed.inf.aqmaps.drone;
 
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 
 import com.mapbox.geojson.FeatureCollection;
@@ -13,23 +12,15 @@ public class AStarDrone extends Drone {
   private FeatureCollection noFlyZones;
   private Coordinates startPos;
   private Coordinates currentPos;
-  private int battery;
-  private ArrayList<Line2D> boundaryLines;
 
   public AStarDrone(ArrayList<Sensor> sensors, Coordinates startPos, FeatureCollection noFlyZones) {
+    super(noFlyZones);
+    
     this.notVisited = sensors;
     this.route = new ArrayList<PathPoint>();
     this.noFlyZones = noFlyZones;
     this.startPos = startPos;
     this.currentPos = startPos;
-    this.battery = MAX_MOVES;
-    
-    this.boundaryLines = new ArrayList<Line2D>();
-    this.boundaryLines.add(NORTH_BOUNDARY);
-    this.boundaryLines.add(WEST_BOUNDARY);
-    this.boundaryLines.add(SOUTH_BOUNDARY);
-    this.boundaryLines.add(EAST_BOUNDARY);
-    this.boundaryLines.addAll(getBoundaryLines(noFlyZones));
     
     this.calculateRoute();
   }
@@ -238,7 +229,7 @@ public class AStarDrone extends Drone {
       var nextPos = move(currentPos, i);
       var distance = currentPathPoint.distanceTravelled + TRAVEL_DISTANCE;
 
-      if (isMoveValid(currentPos, nextPos, this.boundaryLines)) {
+      if (isMoveValid(currentPos, nextPos)) {
         var newPoint = new PathPoint();
         newPoint.startPos = currentPos;
         newPoint.endPos = nextPos;

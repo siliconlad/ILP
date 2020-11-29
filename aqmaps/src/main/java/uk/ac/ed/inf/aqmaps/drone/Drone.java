@@ -25,8 +25,36 @@ public abstract class Drone {
   protected static final Line2D SOUTH_BOUNDARY = new Line2D.Double(SOUTH_WEST, SOUTH_EAST);
   protected static final Line2D EAST_BOUNDARY = new Line2D.Double(NORTH_EAST, SOUTH_EAST);
   
+  // Object attributes used by all drones
+  protected int battery = MAX_MOVES;
+  protected ArrayList<Line2D> boundaryLines;
+  
+  public Drone(FeatureCollection noFlyZones) {
+    // Construct boundary lines from noFlyZones
+    this.boundaryLines = new ArrayList<Line2D>();
+    this.boundaryLines.add(NORTH_BOUNDARY);
+    this.boundaryLines.add(WEST_BOUNDARY);
+    this.boundaryLines.add(SOUTH_BOUNDARY);
+    this.boundaryLines.add(EAST_BOUNDARY);
+    this.boundaryLines.addAll(getBoundaryLines(noFlyZones));
+  }
+  
   // Define methods that must be implemented by Drone subclasses
   public abstract Route getRoute();
+  
+  protected boolean isMoveValid(Coordinates start, Coordinates end) {
+    var startPoint = new Point2D.Double(start.lng, start.lat);
+    var endPoint = new Point2D.Double(end.lng, end.lat);
+    var moveLine = new Line2D.Double(startPoint, endPoint);
+    
+    for (var boundary : this.boundaryLines) {
+      if (moveLine.intersectsLine(boundary)) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
   
   // Static methods common to all drones  
   protected static ArrayList<Line2D> getBoundaryLines(FeatureCollection noFlyZones) {
@@ -50,20 +78,6 @@ public abstract class Drone {
     }
 
     return boundaryLines;
-  }
-  
-  protected static boolean isMoveValid(Coordinates start, Coordinates end, ArrayList<Line2D> boundaryLines) {
-    var startPoint = new Point2D.Double(start.lng, start.lat);
-    var endPoint = new Point2D.Double(end.lng, end.lat);
-    var moveLine = new Line2D.Double(startPoint, endPoint);
-    
-    for (var boundary : boundaryLines) {
-      if (moveLine.intersectsLine(boundary)) {
-        return false;
-      }
-    }
-    
-    return true;
   }
   
   protected static Coordinates move(Coordinates currentPos, int direction) {
