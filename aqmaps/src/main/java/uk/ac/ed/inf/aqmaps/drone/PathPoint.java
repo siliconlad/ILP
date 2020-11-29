@@ -5,7 +5,9 @@ public class PathPoint {
   public Coordinates endPos;
   public Integer direction;
   public Sensor sensor;
+  public Double distanceTravelled;
   public Double distanceScore;
+  public PathPoint prev;
   
   @Override
   public String toString() {
