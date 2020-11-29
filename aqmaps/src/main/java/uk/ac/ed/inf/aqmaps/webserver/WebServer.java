@@ -17,7 +17,7 @@ import com.mapbox.geojson.FeatureCollection;
 import uk.ac.ed.inf.aqmaps.drone.Sensor;
 
 public class WebServer {
-  private final HttpClient client = HttpClient.newHttpClient();
+  private static final HttpClient client = HttpClient.newHttpClient();
   private final String noFlyZonePath = "buildings/no-fly-zones.geojson";
 
   private String protocol;
@@ -64,7 +64,7 @@ public class WebServer {
     
     try {
       var request = HttpRequest.newBuilder().uri(URI.create(urlString)).build();
-      response = this.client.send(request, BodyHandlers.ofString());
+      response = client.send(request, BodyHandlers.ofString());
     } catch (ConnectException e) {
       throw new SendRequestException("Unable to connect to " + urlRoot);
     } catch (IllegalArgumentException e) {
