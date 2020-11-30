@@ -114,7 +114,7 @@ public class Route {
     
     // Add properties
     sensorFeature.addStringProperty("location", sensor.location);
-    sensorFeature.addStringProperty("rbg-string", markerColor);
+    sensorFeature.addStringProperty("rgb-string", markerColor);
     sensorFeature.addStringProperty("marker-color", markerColor);
     sensorFeature.addStringProperty("marker-symbol", markerSymbol);
   
