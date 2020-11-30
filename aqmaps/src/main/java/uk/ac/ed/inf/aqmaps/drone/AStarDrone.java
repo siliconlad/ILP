@@ -29,9 +29,7 @@ public class AStarDrone extends Drone {
     return new Route(this.route, this.notVisited, this.noFlyZones);
   }
   
-  private void calculateRoute() {
-    var skippedSensors = new ArrayList<Sensor>();
-    
+  private void calculateRoute() {    
     while (this.notVisited.size() > 0) {
       var nextSensor = this.getClosestSensor(this.currentPos, this.notVisited);
       
@@ -42,30 +40,12 @@ public class AStarDrone extends Drone {
       try {
         var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
         
-        // Ensure we can always return to the start
-        try {
-          this.getRouteToStart(routeToSensor.get(routeToSensor.size() - 1).endPos);
-        } catch (BatteryLimitException e) {
-          System.out.println("Would not be able to return to start. Skipping sensor...");
-          this.notVisited.remove(nextSensor);
-          skippedSensors.add(nextSensor);
-          continue;
-        }
-        
-        // Update state
-        
-        if (this.route.size() > 0) {
-          routeToSensor.get(0).prev = this.route.get(this.route.size() - 1);
-        }
+        // Update state (routeToSensor.size() > 0 due to specification)
         this.route.addAll(routeToSensor);
         this.battery -= routeToSensor.size();
         this.notVisited.remove(nextSensor);
         this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
         System.out.println("Battery: " + this.battery);
-        
-        // Skipped sensors may be reachable after moving to nextSensor so add them back
-        this.notVisited.addAll(skippedSensors);
-        skippedSensors.clear();
       } catch (BatteryLimitException e) {
         // Return to start because no other accessible sensor is going to be closer
         System.out.println("Route exceeds battery limit. Returning to start...");
@@ -74,23 +54,16 @@ public class AStarDrone extends Drone {
     }
     
     System.out.println("Returning to start...");
-    try {
-      var routeToStart = this.getRouteToStart(this.currentPos);
-      
-      if (this.route.size() > 0) {
-        routeToStart.get(0).prev = this.route.get(this.route.size() - 1);
-      }
-      
+    var routeToStart = this.getRouteToStart(this.currentPos);
+   
+    // Update state
+    if (routeToStart.size() > 0) {
       route.addAll(routeToStart);
       this.battery -= routeToStart.size();
       this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
-    } catch (BatteryLimitException e) {
-      System.out.println("FAILED to return to start.");
     }
     System.out.println("Battery: " + this.battery);
     
-    // notVisited should have all the sensors that were not visited at the end of execution
-    this.notVisited.addAll(skippedSensors);
     if (this.notVisited.size() > 0) {
       System.out.println(this.notVisited.size() + " sensors were not were visited.");
     }
@@ -98,7 +71,7 @@ public class AStarDrone extends Drone {
   
   private Sensor getClosestSensor(Coordinates currentPos, ArrayList<Sensor> sensors) {
     Sensor closestSensor = null;
-    double smallestDistance = Double.POSITIVE_INFINITY;
+    var smallestDistance = Double.POSITIVE_INFINITY;
     
     for (var sensor : sensors) {
       var distance = getDistance(currentPos, sensor.coordinates);
@@ -123,19 +96,20 @@ public class AStarDrone extends Drone {
     return routeToSensor;
   }
   
-  private ArrayList<PathPoint> getRouteToStart(Coordinates currentPos) throws BatteryLimitException {
-    var routeToTarget = new ArrayList<PathPoint>();
+  private ArrayList<PathPoint> getRouteToStart(Coordinates currentPos) {
+    var routeToStart = new ArrayList<PathPoint>();
     
     // Specification does not require us to move before we finish
     if (getDistance(currentPos, this.startPos) >= MAX_FINISH_RANGE) {
-      routeToTarget = this.getRoute(currentPos, this.startPos, MAX_FINISH_RANGE); 
+      routeToStart = this.getRoute(currentPos, this.startPos, MAX_FINISH_RANGE); 
     }
     
-    if (routeToTarget.size() > this.battery) {
-      throw new BatteryLimitException("Route exceeds battery limit.");
+    // Trim to satisfy battery amount
+    if (routeToStart.size() > this.battery) {
+      routeToStart.subList(0, this.battery);
     }
   
-    return routeToTarget;
+    return routeToStart;
   }
   
   private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double max_offset) {
@@ -156,7 +130,7 @@ public class AStarDrone extends Drone {
         // If we have not yet expanded the path point, the current one may be shorter
         for (var openPathPoint : openPathPoints) {            
           if (pathPoint.endPos.equals(openPathPoint.endPos)) {
-            if (pathPoint.distanceScore < openPathPoint.distanceScore) {
+            if (pathPoint.distanceScore.doubleValue() < openPathPoint.distanceScore.doubleValue()) {
               openPathPoints.remove(openPathPoint);
               openPathPoints.add(pathPoint);
             }
@@ -212,7 +186,7 @@ public class AStarDrone extends Drone {
     }
 
     for (var pathPoint : nextPathPoints) {
-      if (pathPoint.distanceScore < minDistance) {
+      if (pathPoint.distanceScore.doubleValue() < minDistance) {
         minDistance = pathPoint.distanceScore;
         minPathPoint = pathPoint;
       }

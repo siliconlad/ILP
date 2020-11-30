@@ -127,7 +127,7 @@ public class Route {
     }
     
     // Battery too low, hence reading is unreliable
-    if (sensor.battery < 10) {
+    if (sensor.battery.doubleValue() < 10) {
       return "#000000";
     }
     
@@ -163,7 +163,7 @@ public class Route {
     }
    
     // Battery too low, hence reading is unreliable
-    if (sensor.battery < 10) {
+    if (sensor.battery.doubleValue() < 10) {
       return "cross";
     } 
    
