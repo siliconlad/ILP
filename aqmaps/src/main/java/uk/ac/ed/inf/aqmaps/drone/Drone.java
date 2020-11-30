@@ -28,8 +28,11 @@ public abstract class Drone {
   // Object attributes used by all drones
   protected int battery = MAX_MOVES;
   protected ArrayList<Line2D> boundaryLines;
+  protected FeatureCollection noFlyZones;
   
   public Drone(FeatureCollection noFlyZones) {
+    this.noFlyZones = noFlyZones;
+    
     // Construct boundary lines from noFlyZones
     this.boundaryLines = new ArrayList<Line2D>();
     this.boundaryLines.add(NORTH_BOUNDARY);

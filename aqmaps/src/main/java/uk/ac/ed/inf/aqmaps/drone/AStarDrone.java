@@ -9,7 +9,6 @@ public class AStarDrone extends Drone {
   
   private ArrayList<Sensor> notVisited;
   private ArrayList<PathPoint> route;
-  private FeatureCollection noFlyZones;
   private Coordinates startPos;
   private Coordinates currentPos;
 
@@ -18,7 +17,6 @@ public class AStarDrone extends Drone {
     
     this.notVisited = sensors;
     this.route = new ArrayList<PathPoint>();
-    this.noFlyZones = noFlyZones;
     this.startPos = startPos;
     this.currentPos = startPos;
     
