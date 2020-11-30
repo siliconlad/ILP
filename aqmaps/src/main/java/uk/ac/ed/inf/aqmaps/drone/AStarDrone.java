@@ -32,8 +32,6 @@ public class AStarDrone extends Drone {
       var nextSensor = this.getClosestSensor(this.currentPos, this.notVisited);
       
       System.out.println("Next target: " + nextSensor.location);
-      System.out.println("Target pos: " + nextSensor.coordinates.toString());
-      System.out.println("Current pos: " + currentPos.toString());
       
       try {
         var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
@@ -43,7 +41,6 @@ public class AStarDrone extends Drone {
         this.battery -= routeToSensor.size();
         this.notVisited.remove(nextSensor);
         this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
-        System.out.println("Battery: " + this.battery);
       } catch (BatteryLimitException e) {
         // Return to start because no other accessible sensor is going to be closer
         System.out.println("Route exceeds battery limit. Returning to start...");
@@ -60,11 +57,10 @@ public class AStarDrone extends Drone {
       this.battery -= routeToStart.size();
       this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
     }
-    System.out.println("Battery: " + this.battery);
     
-    if (this.notVisited.size() > 0) {
-      System.out.println(this.notVisited.size() + " sensors were not were visited.");
-    }
+    System.out.println("Battery: " + this.battery);
+    System.out.println("Visited " + (33 - this.notVisited.size()) + "/33 sensors.");
+    System.out.println("Finished.");
   }
   
   private Sensor getClosestSensor(Coordinates currentPos, ArrayList<Sensor> sensors) {
@@ -89,7 +85,6 @@ public class AStarDrone extends Drone {
     }
   
     routeToSensor.get(routeToSensor.size() - 1).sensor = sensor;
-    System.out.println("Found path to " + sensor.location);
     
     return routeToSensor;
   }
@@ -104,6 +99,7 @@ public class AStarDrone extends Drone {
     
     // Trim to satisfy battery amount
     if (routeToStart.size() > this.battery) {
+      System.out.println("Battery too low to reach start.");
       routeToStart.subList(0, this.battery);
     }
   
