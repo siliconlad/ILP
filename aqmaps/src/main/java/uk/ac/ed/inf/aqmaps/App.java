@@ -35,7 +35,7 @@ public class App
       
       var drone = new AStarDrone(sensors, startPos, noFlyZones);
       var droneRoute = drone.getRoute();
-      droneRoute.buildMap(true);
+      droneRoute.buildMap(false);
       droneRoute.saveMap("readings-" + day + "-" + month + "-" + year + ".geojson");
       droneRoute.saveRoute("flightpath-" + day + "-" + month + "-" + year + ".txt");
       
