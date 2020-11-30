@@ -25,8 +25,7 @@ public class App
     var webServer = new WebServer("http", "localhost", port);
     
     try {
-      var sensorList = webServer.getSensors(year, month, day);
-      var sensors = addSensorLocations(sensorList, webServer);
+      var sensors = webServer.getSensorsWithCoordinates(year, month, day);
       
       var startPos = new Coordinates();
       startPos.lng = longitude;
@@ -50,23 +49,5 @@ public class App
       e.printStackTrace();
       System.exit(1);
     }
-  }
-    
-  // WebServer does not return sensor coordinates (as this is stored in a separate directory 'words/')
-  private static ArrayList<Sensor> addSensorLocations(ArrayList<Sensor> sensors, WebServer webserver) {
-    for (var sensor : sensors) {
-      try {
-        var sensorLocationInfo = webserver.getWhat3WordsDetails(sensor.location);
-        sensor.coordinates = sensorLocationInfo.coordinates;
-      } catch (SendRequestException e) {
-        e.printStackTrace();
-        System.exit(1);
-      } catch (ResponseException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-    }
-
-    return sensors;
   }
 }

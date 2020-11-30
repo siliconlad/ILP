@@ -93,7 +93,7 @@ class WebServerTest {
   void testGetSensors() {
     assertAll("sensors",
         () -> {
-          ArrayList<Sensor> res = webServer.getSensors("2020", "01", "02");
+          ArrayList<Sensor> res = webServer.getSensorsWithCoordinates("2020", "01", "02");
           assertNotNull(res);
 
           assertEquals(33, res.size());
@@ -101,35 +101,45 @@ class WebServerTest {
           assertAll("sensor 1",
               () -> assertEquals("coherent.saints.stuck", res.get(0).location),
               () -> assertEquals(5.505353, res.get(0).battery),
-              () -> assertEquals("null", res.get(0).reading)
+              () -> assertEquals("null", res.get(0).reading),
+              () -> assertEquals(-3.189379, res.get(0).coordinates.lng),
+              () -> assertEquals(55.945949, res.get(0).coordinates.lat)
           );
           
           assertAll("sensor 6",
               () -> assertEquals("hooked.shine.third", res.get(7).location),
               () -> assertEquals(46.385944, res.get(7).battery),
-              () -> assertEquals("43.79", res.get(7).reading)
+              () -> assertEquals("43.79", res.get(7).reading),
+              () -> assertEquals(-3.189764, res.get(7).coordinates.lng),
+              () -> assertEquals(55.942661, res.get(7).coordinates.lat)
           );
           
           assertAll("sensor 14",
               () -> assertEquals("along.spill.limp", res.get(14).location),
               () -> assertEquals(25.60094, res.get(14).battery),
-              () -> assertEquals("0.0", res.get(14).reading)
+              () -> assertEquals("0.0", res.get(14).reading),
+              () -> assertEquals(-3.191161, res.get(14).coordinates.lng),
+              () -> assertEquals(55.942742, res.get(14).coordinates.lat)
           );
           
           assertAll("sensor 23",
               () -> assertEquals("rated.fired.crowds", res.get(28).location),
               () -> assertEquals(7.7690783, res.get(28).battery),
-              () -> assertEquals("253.7372315682059", res.get(28).reading)
+              () -> assertEquals("253.7372315682059", res.get(28).reading),
+              () -> assertEquals(-3.186392, res.get(28).coordinates.lng),
+              () -> assertEquals(55.944656, res.get(28).coordinates.lat)
           );
           
           assertAll("sensor 33",
               () -> assertEquals("hello.love.keys", res.get(32).location),
               () -> assertEquals(79.6998, res.get(32).battery),
-              () -> assertEquals("196.4", res.get(32).reading)
+              () -> assertEquals("196.4", res.get(32).reading),
+              () -> assertEquals(-3.18514, res.get(32).coordinates.lng),
+              () -> assertEquals(55.943685, res.get(32).coordinates.lat)
           );
         },
         () -> {
-          ArrayList<Sensor> res = webServer.getSensors("2020", "12", "25");
+          ArrayList<Sensor> res = webServer.getSensorsWithCoordinates("2020", "12", "25");
           assertNotNull(res);
           
           assertEquals(33, res.size());
@@ -137,31 +147,41 @@ class WebServerTest {
           assertAll("sensor 1",
               () -> assertEquals("thank.salsa.brain", res.get(0).location),
               () -> assertEquals(20.282084, res.get(0).battery),
-              () -> assertEquals("51.05", res.get(0).reading)
+              () -> assertEquals("51.05", res.get(0).reading),
+              () -> assertEquals(-3.187789, res.get(0).coordinates.lng),
+              () -> assertEquals(55.944386, res.get(0).coordinates.lat)
           );
           
           assertAll("sensor 3",
               () -> assertEquals("panic.squad.danger", res.get(2).location),
               () -> assertEquals(7.814354, res.get(2).battery),
-              () -> assertEquals("NaN", res.get(2).reading)
+              () -> assertEquals("NaN", res.get(2).reading),
+              () -> assertEquals(-3.187693, res.get(2).coordinates.lng),
+              () -> assertEquals(55.942769, res.get(2).coordinates.lat)
           );
           
           assertAll("sensor 14",
               () -> assertEquals("renew.ears.tend", res.get(13).location),
               () -> assertEquals(89.95044, res.get(13).battery),
-              () -> assertEquals("110.86", res.get(13).reading)
+              () -> assertEquals("110.86", res.get(13).reading),
+              () -> assertEquals(-3.187018, res.get(13).coordinates.lng),
+              () -> assertEquals(55.943982, res.get(13).coordinates.lat)
           );
           
           assertAll("sensor 23",
               () -> assertEquals("bound.ends.matter", res.get(22).location),
               () -> assertEquals(27.960676, res.get(22).battery),
-              () -> assertEquals("78.19", res.get(22).reading)
+              () -> assertEquals("78.19", res.get(22).reading),
+              () -> assertEquals(-3.187645, res.get(22).coordinates.lng),
+              () -> assertEquals(55.944143, res.get(22).coordinates.lat)
           );
           
           assertAll("sensor 33",
               () -> assertEquals("groups.ideas.script", res.get(32).location),
               () -> assertEquals(31.75398, res.get(32).battery),
-              () -> assertEquals("70.64", res.get(32).reading)
+              () -> assertEquals("70.64", res.get(32).reading),
+              () -> assertEquals(-3.188608, res.get(32).coordinates.lng),
+              () -> assertEquals(55.943119, res.get(32).coordinates.lat)
           ); 
         }
     );

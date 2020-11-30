@@ -30,6 +30,17 @@ public class WebServer {
     this.port = port;
   }
   
+  public ArrayList<Sensor> getSensorsWithCoordinates(String year, String month, String day) throws SendRequestException, ResponseException {
+    var sensors = this.getSensors(year, month, day);
+    
+    for (var sensor : sensors) {
+      var sensorLocationInfo = this.getWhat3WordsDetails(sensor.location);
+      sensor.coordinates = sensorLocationInfo.coordinates;
+    }
+
+    return sensors;
+  }
+  
   public ArrayList<Sensor> getSensors(String year, String month, String day) throws SendRequestException, ResponseException {
     var filePath = "maps/" + year + "/" + month + "/" + day + "/" + "air-quality-data.json";
     var response = this.sendRequest(filePath);
