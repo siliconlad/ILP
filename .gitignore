@@ -2,3 +2,9 @@
 dependency-reduced-pom.xml
 .project
 target/
+
+report/*.aux
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.toc
