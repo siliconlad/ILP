@@ -1,6 +1,6 @@
 package uk.ac.ed.inf.aqmaps.drone;
 
-public class PathPoint {
+class PathPoint {
   public Coordinates startPos;
   public Coordinates endPos;
   public Integer direction;
