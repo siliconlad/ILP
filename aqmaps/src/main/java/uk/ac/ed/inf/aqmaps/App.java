@@ -1,11 +1,9 @@
 package uk.ac.ed.inf.aqmaps;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
-import uk.ac.ed.inf.aqmaps.drone.Coordinates;
 import uk.ac.ed.inf.aqmaps.drone.AStarDrone;
-import uk.ac.ed.inf.aqmaps.drone.Sensor;
+import uk.ac.ed.inf.aqmaps.drone.Coordinates;
 import uk.ac.ed.inf.aqmaps.webserver.ResponseException;
 import uk.ac.ed.inf.aqmaps.webserver.SendRequestException;
 import uk.ac.ed.inf.aqmaps.webserver.WebServer;
@@ -26,15 +24,15 @@ public class App
     
     try {
       var sensors = webServer.getSensorsWithCoordinates(year, month, day);
+      var noFlyZones = webServer.getNoFlyZones();
       
       var startPos = new Coordinates();
       startPos.lng = longitude;
       startPos.lat = latitude;
       
-      var noFlyZones = webServer.getNoFlyZones();
-      
       var drone = new AStarDrone(sensors, startPos, noFlyZones);
       var droneRoute = drone.getRoute();
+
       droneRoute.buildMap(false);
       droneRoute.saveMap("readings-" + day + "-" + month + "-" + year + ".geojson");
       droneRoute.saveRoute("flightpath-" + day + "-" + month + "-" + year + ".txt");
