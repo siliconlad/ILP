@@ -17,6 +17,7 @@ import com.mapbox.geojson.FeatureCollection;
 import uk.ac.ed.inf.aqmaps.drone.Sensor;
 
 public class WebServer {
+  // Prevents the creation of many clients
   private static final HttpClient client = HttpClient.newHttpClient();
   private final String noFlyZonePath = "buildings/no-fly-zones.geojson";
 
@@ -96,5 +97,4 @@ public class WebServer {
     
     return response; 
   }
-  
 }
