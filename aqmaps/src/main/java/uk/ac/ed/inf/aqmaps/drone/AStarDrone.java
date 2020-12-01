@@ -30,20 +30,19 @@ public class AStarDrone extends Drone {
   private void calculateRoute() {    
     while (this.notVisited.size() > 0) {
       var nextSensor = this.getClosestSensor(this.currentPos, this.notVisited);
-      
       System.out.println("Next target: " + nextSensor.location);
       
       try {
         var routeToSensor = this.getRouteToSensor(this.currentPos, nextSensor);
         
-        // Update state (routeToSensor.size() > 0 due to specification)
+        // Update state (note: routeToSensor.size() > 0 due to specification)
         this.route.addAll(routeToSensor);
         this.battery -= routeToSensor.size();
         this.notVisited.remove(nextSensor);
         this.currentPos = routeToSensor.get(routeToSensor.size() - 1).endPos;
       } catch (BatteryLimitException e) {
-        // Return to start because no other accessible sensor is going to be closer
-        System.out.println("Route exceeds battery limit. Returning to start...");
+        // Return to start because no other sensor is going to be closer
+        System.out.println("Route exceeds battery limit.");
         break;
       }
     }
@@ -53,7 +52,7 @@ public class AStarDrone extends Drone {
    
     // Update state
     if (routeToStart.size() > 0) {
-      route.addAll(routeToStart);
+      this.route.addAll(routeToStart);
       this.battery -= routeToStart.size();
       this.currentPos = routeToStart.get(routeToStart.size() - 1).endPos;
     }
@@ -74,6 +73,7 @@ public class AStarDrone extends Drone {
           smallestDistance = distance;
       }
     }
+
     return closestSensor;
   }
   
@@ -84,6 +84,7 @@ public class AStarDrone extends Drone {
       throw new BatteryLimitException("Route exceeds battery limit.");
     }
   
+    // The last move in the route is when we connect to the sensor
     routeToSensor.get(routeToSensor.size() - 1).sensor = sensor;
     
     return routeToSensor;
@@ -99,7 +100,7 @@ public class AStarDrone extends Drone {
     
     // Trim to satisfy battery amount
     if (routeToStart.size() > this.battery) {
-      System.out.println("Battery too low to reach start.");
+      System.out.println("Battery too low to return to start.");
       routeToStart.subList(0, this.battery);
     }
   
@@ -107,8 +108,10 @@ public class AStarDrone extends Drone {
   }
   
   private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double max_offset) {
-    var route = new ArrayList<PathPoint>();
+    // Stores all visited path points
     var closedPathPoints = new ArrayList<PathPoint>();
+    
+    // Stores all path points to be visited
     var openPathPoints = new ArrayList<PathPoint>();
     
     // Create initial path point
@@ -120,8 +123,8 @@ public class AStarDrone extends Drone {
       var newPathPoints = this.generatePathPoints(currentPathPoint, target, LIMIT_BRANCHING_FACTOR);
       for (var pathPoint : newPathPoints) {
         var pointVisited = false;
-        
-        // If we have not yet expanded the path point, the current one may be shorter
+
+        // If we have not yet expanded the pathPoint, the current one may be shorter
         for (var openPathPoint : openPathPoints) {            
           if (pathPoint.endPos.equals(openPathPoint.endPos)) {
             if (pathPoint.distanceScore.doubleValue() < openPathPoint.distanceScore.doubleValue()) {
@@ -137,7 +140,7 @@ public class AStarDrone extends Drone {
           continue;
         }
         
-        // If we've already expanded the node the current node must be longer due to constant step sizes
+        // If we've already expanded the pathPoint the current one must have larger distanceScore due to constant step sizes
         for (var closedPathPoint : closedPathPoints) {            
           if (pathPoint.endPos.equals(closedPathPoint.endPos)) {
             pointVisited = true;
@@ -149,39 +152,37 @@ public class AStarDrone extends Drone {
           continue;
         }
         
-        // Otherwise, we've never seen this point before so add it to the list
+        // Otherwise, we've never seen this pathPoint before so add it to the list
         openPathPoints.add(pathPoint);
       }
       
-      // Add current node to the list of expanded nodes
+      // Add current pathPoint to the list of expanded pathPoints
       closedPathPoints.add(currentPathPoint);
       
-      // Select new node from frontier
-      currentPathPoint = this.getNextPathPoint(openPathPoints, target);
+      // Select new pathPoint
+      currentPathPoint = this.getNextPathPoint(openPathPoints);
       openPathPoints.remove(currentPathPoint);
     } while (getDistance(currentPathPoint.endPos, target) >= max_offset);
     
     // Reconstruct path
+    var routeToTarget = new ArrayList<PathPoint>();
     while (currentPathPoint.prev != null) {
-      route.add(0, currentPathPoint);
+      routeToTarget.add(0, currentPathPoint);
       currentPathPoint = currentPathPoint.prev;
     }
-    route.get(0).prev = null;
+    routeToTarget.get(0).prev = null;
     
-    return route;
+    return routeToTarget;
   }
 
-  private PathPoint getNextPathPoint(ArrayList<PathPoint> nextPathPoints, Coordinates target) {
+  private PathPoint getNextPathPoint(ArrayList<PathPoint> nextPathPoints) {
     var minDistance = Double.POSITIVE_INFINITY;
     PathPoint minPathPoint = null;
     
-    if (nextPathPoints.size() == 0) {
-      throw new IllegalArgumentException("nextPathPoints is an empty ArrayList.");
-    }
-
+    // Find pathPoint with lowest distanceScore
     for (var pathPoint : nextPathPoints) {
       if (pathPoint.distanceScore.doubleValue() < minDistance) {
-        minDistance = pathPoint.distanceScore;
+        minDistance = pathPoint.distanceScore.doubleValue();
         minPathPoint = pathPoint;
       }
     }
@@ -193,6 +194,7 @@ public class AStarDrone extends Drone {
     var nextPathPoints = new ArrayList<PathPoint>();
     var currentPos = currentPathPoint.endPos;
     
+    // Generate all valid pathPoints
     for (var i=0; i < 360; i += 10) {
       var nextPos = move(currentPos, i);
       var distance = currentPathPoint.distanceTravelled + TRAVEL_DISTANCE;
@@ -210,10 +212,10 @@ public class AStarDrone extends Drone {
       }
     }
     
-    // Select the closest `limit` number of path points
+    // Select the closest `limit` number of path points to reduce time complexity
     var limitedPathPoints = new ArrayList<PathPoint>();
     for (var i=0; i < limit && i < nextPathPoints.size(); i++) {
-      var pathPoint = this.getNextPathPoint(nextPathPoints, target);
+      var pathPoint = this.getNextPathPoint(nextPathPoints);
       limitedPathPoints.add(pathPoint);
       nextPathPoints.remove(pathPoint);
     }

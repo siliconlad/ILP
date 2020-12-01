@@ -5,17 +5,20 @@ class PathPoint {
   public Coordinates endPos;
   public Integer direction;
   public Sensor sensor;
-  public Double distanceTravelled;
-  public Double distanceScore;
-  public PathPoint prev;
+  
+  // Used for the path planning algorithm only
+  protected Double distanceTravelled;
+  protected Double distanceScore;
+  protected PathPoint prev;
   
   @Override
   public String toString() {
     // May not be initialised in the beginning
+    var startPosString = (this.startPos == null) ? "null" : this.startPos.toString();
     var endPosString = (this.endPos == null) ? "null" : this.endPos.toString();
     var directionString = (this.direction == null) ? "null" : this.direction.toString();
     var sensorString = (this.sensor == null) ? "null" : this.sensor.location;
 
-    return this.startPos.toString() + "," + directionString + "," + endPosString + "," + sensorString;
+    return startPosString + "," + directionString + "," + endPosString + "," + sensorString;
   }
 }

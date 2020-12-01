@@ -8,7 +8,7 @@ public class Sensor {
   
   @Override
   public String toString()  {
-    // Coordinates may not be straight away
+    // Coordinates may not be set straight away
     var coordinatesString = (this.coordinates == null) ? "null" : this.coordinates.toString();
     
     return "Sensor Object" + "\n" +

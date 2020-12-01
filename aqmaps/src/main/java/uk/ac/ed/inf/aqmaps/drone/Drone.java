@@ -63,12 +63,14 @@ public abstract class Drone {
   protected static ArrayList<Line2D> getBoundaryLines(FeatureCollection noFlyZones) {
     var boundaryLines = new ArrayList<Line2D>();
     
+    // Loop through each of the noFlyZones
     var noFlyZonesFeatures = noFlyZones.features();
     for (var noFlyZoneFeature : noFlyZonesFeatures) {
       var noFlyZoneGeometry = noFlyZoneFeature.geometry();
       var noFlyZonePolygon = (Polygon)noFlyZoneGeometry;
       var noFlyZoneCoordinates = noFlyZonePolygon.coordinates().get(0);
       
+      // Create a Line2D for each side of the noFlyZone
       for (var i=0; i < noFlyZoneCoordinates.size() - 1; i++) {
         var start = noFlyZoneCoordinates.get(i);
         var end = noFlyZoneCoordinates.get(i+1);

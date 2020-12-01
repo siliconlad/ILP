@@ -30,9 +30,9 @@ public class Route {
       throw new RuntimeException("Map not built. Call buildMap method first.");
     }
 
-    var saveFile = new FileWriter(fileName);
-    saveFile.write(this.map.toJson());
-    saveFile.close();
+    var mapFileWriter = new FileWriter(fileName);
+    mapFileWriter.write(this.map.toJson());
+    mapFileWriter.close();
   }
   
   public void saveRoute(String fileName) throws IOException{
@@ -87,6 +87,7 @@ public class Route {
   private Feature createPathFeature() {
     var mapPathPoints = new ArrayList<Point>();
     
+    // Add start point
     if (this.dronePath.size() > 0) {
       var startPathPoint = Point.fromLngLat(this.dronePath.get(0).startPos.lng, this.dronePath.get(0).startPos.lat);
       mapPathPoints.add(startPathPoint);
