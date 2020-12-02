@@ -42,9 +42,6 @@ public abstract class Drone {
     this.boundaryLines.addAll(getBoundaryLines(noFlyZones));
   }
   
-  // Define methods that must be implemented by Drone subclasses
-  public abstract Route getRoute();
-  
   protected boolean isMoveValid(Coordinates start, Coordinates end) {
     var startPoint = new Point2D.Double(start.lng, start.lat);
     var endPoint = new Point2D.Double(end.lng, end.lat);
@@ -58,8 +55,7 @@ public abstract class Drone {
     
     return true;
   }
-  
-  // Static methods common to all drones  
+
   protected static ArrayList<Line2D> getBoundaryLines(FeatureCollection noFlyZones) {
     var boundaryLines = new ArrayList<Line2D>();
     
