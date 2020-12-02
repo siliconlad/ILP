@@ -4,10 +4,19 @@
 \usepackage[a4paper]{geometry}
 \usepackage{graphicx}
 \usepackage{enumitem}
+\usepackage{mdframed}
 \usepackage{caption}
+\usepackage{xcolor}
 \usepackage{hyperref}
 
 \graphicspath{ {./figures/} }
+
+\hypersetup {
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
 
 \setlength{\parindent}{0em}
 \setlength{\parskip}{0.5em}
@@ -28,10 +37,60 @@
 %%%
 
 \section{Software Architecture}
+When reading the coursework specification, it was clear that there were two distinct components to this practical. The first being the \textbf{web server} and the second being the \textbf{drone}. For this reason, I decided to create two sub-packages within my \texttt{aqmaps} package to contain all the classes related to each component. My \texttt{App.java} puts the pieces together to form the final application (e.g. by dealing with the command-line inputs and calling the appropriate public methods of objects of the classes defined in the sub-packages).
 
-\newpage
+The overall structure is shown in Figure \ref{fig:uml}. The links between the classes indicate a direct relationship (e.g an object of one class is an attribute of another, or a method of one class utilises an object of another).
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{uml-class-diagram}
+    \captionof{figure}{Class diagram of \texttt{aqmaps}}
+    \label{fig:uml}
+\end{figure}
 
-\section{Drone Control Algorithm}
+\subsection{\texttt{webserver}}
+The web server sub-package deals exclusively with \textbf{obtaining information from the web server}. Because this is a very important part of the practical, it felt appropriate to dedicate an entire sub-package to this.
+
+The sub-package contains 4 classes:
+\begin{enumerate}[topsep=0pt, itemsep=0pt]
+    \item \texttt{WebServer}
+    \item \texttt{What3Words}
+    \item \texttt{SendRequestException}
+    \item \texttt{ResponseException}
+\end{enumerate}
+
+The \texttt{WebServer} is the main class in this package and provides a layer of abstraction over all communication to the web server. It made sense to create a web server class because the web server is an standalone entity within our system. The \texttt{WebServer} class models this and provides some useful methods for retrieving data from the server. The other three classes support the main \texttt{WebServer} class. The \texttt{What3Words} class is used to store the JSON information obtained from the \texttt{words/} directory on the web server as a Java object. This is required by \texttt{gson}. We also use the \texttt{Sensor} object from the \texttt{drone} sub-package when obtaining sensor information from the web server. The reason that class was included in the \texttt{drone} sub-package and not this package was because it did not make much sense to store a class that represents a physical sensor in a package dedicated to dealing with a web server. It made more sense to include it in the drone package where the drone is modelled due to the close relationship that these two objects have in this practical.
+
+The other two classes (\texttt{SendRequestException} and \texttt{ResponseException}) were created to abstract over the specific exceptions that can occur when communicating with the web server. The \texttt{SendRequestException} abstracts over the exceptions related to the creation and sending of the HTTP request (e.g. if an invalid URI was provided). The \texttt{ResponseException} abstracts over the exceptions relating to the HTTP reponse from the web server (e.g. if a 404 error was returned). This provides a cleaner interface for the user of the web server that hides away unnecessary complexity.
+
+\subsection{\texttt{drone}}
+This sub-package consists of a set of classes related to the drone's \textbf{internal representation of the world}. In other words, these classes together model the problem detailed in the specification of determining and presenting the flight path of a drone around a geographical area with no-fly-zones to collect readings from a set of sensors. This may seem like a lot                                of disparate ideas, but they are in fact very closely related.
+
+There are 7 classes in this sub-package:
+\begin{enumerate}[topsep=0pt, itemsep=0pt]
+    \item \texttt{Drone}
+    \item \texttt{AStarDrone}
+    \item \texttt{Sensor}
+    \item \texttt{Route}
+    \item \texttt{PathPoint}
+    \item \texttt{Coordinates}
+    \item \texttt{BatteryLimitException}
+\end{enumerate}
+
+The \texttt{Drone} class models the \textbf{physical properties that affect the drone}. For example, it defines the method \texttt{move} which models how to drone moves in the physical world. \texttt{getDistance} represents the measure of distance between two points in the real world. It also has attributes that model the confinement area that constrain the drone as detailed in the specification and provides methods for modelling the no-fly-zones. All together this class models the relationship between the drone and the physical world as detailed in the specification. For this reason, the \texttt{Drone} class is abstract as instantiating it on its own is undefined. Instead this class is inherited by all drones to allow it to obey the physical contraints posed by the specification.
+
+This brings us to the \texttt{AStarDrone} class which models the \textbf{behaviour of the drone}. It inherits from the \texttt{Drone} class to understand the physical world, then it uses its own methods to navigated within that world. This is where the drone control algorithm (detailed in section \ref{drone_alg}) is implemented. The class retrieves the initial starting conditions of the world (i.e starting position, sensors, and no-fly-zones) and calculates an appropriate route to visit all the sensors and return to the starting position.
+
+\begin{mdframed}
+In my original implementation, I only had one \texttt{GreedyDrone} class which contained the implementation of both \texttt{Drone} and \texttt{AStarDrone}. I then decided to create a new drone control algorithm based on the A* search algorithm as the greedy approach I was using was giving me some problems. It was when I was doing this that I noticed that some functions and attributes were being duplicated in both the \texttt{GreedyDrone} class and the then newly created \texttt{AStarDrone} class. This was the original motivation behind creating an abstract class that `pulled out' this shared implementation. Upon closer inspection I realized that the code I was pulling out reflected the rules of the physical world in which the drone was operating under as described in specification (e.g distance of a single move of the drone, the distance measure, the representation of the confinement area, etc). This was a pleasant surprise.
+\end{mdframed}
+
+The \texttt{Route} object is the third main class within this sub-package. This class arose due to a strong emphasis that the specification placed on the route of the drone as a GeoJSON map and as a flightpath in txt format. I felt that modelling the route itself was appropriate as the GeoJSON map and the flightpath were simply different representations of the same underlying `object` i.e the route. This class provides convenient methods to obtain both the flightpath and the GeoJSON map of the route as \texttt{.txt} and \texttt{.geojson} files respectively.
+
+The two classes \texttt{Coordinates} and \texttt{PathPoint} both represent important concepts that map to the real world. The \texttt{Coordinates} class represents the latitude and longitude values of a position on the map as described in the specification. This abstraction is incredibly useful for representing the position of objects such as the drone or the sensors. The \texttt{PathPoint} object represents a single movement of the drone from one position to another. This class was created to represent the concept outlined in the specification for each line of the flightpath text file. It is also used within the drone to represent the global route as a sequence of drone movements and the drone control algorithm as a way to represent the different possible movement options that the drone has at each particular step.
+
+Finally, the \texttt{BatteryLimitException} class is used to represent the event when a route calculated by the drone control algorithm is longer than the battery of the drone allows. By raising this exception the control algorithm can react and create a contingency plan (e.g by returning to the starting position). This class is not essential but proved to be convenient when implementing the control algorithm.
+
+\section{Drone Control Algorithm} \label{drone_alg}
 The specification document describes a modified version of the well known \href{https://en.wikipedia.org/wiki/Travelling\_salesman\_problem}{travelling salesman problem} (TSP) where we look to visit each sensor and return to the starting position. Of course, it is not exactly the same problem as the path to each sensor is not a single link but rather a series of restricted movements. Hence, the combination of the travelling salesman problem being NP-complete and the movements of the drone made the complexity of the problem very apparent from the beginning.
 
 Knowing that finding an algorithm that would solve the entire path planning problem optimally would not be feasible, I broke the problem into two sub-problems. The first is the order in which the drone visits the sensors and the second is finding the sequence of valid moves to get from one coordinate position to another.
@@ -72,8 +131,6 @@ Although this algorithm is simple and runs very quickly (linear in the number of
 
 It is worth noting that the drone only looks for the next sensor and does not pre-compute the order of all sensors. This decision was taken because the drone does not necessarily reach the exact coordinates of the target sensor and hence pre-computing everything from the beginning would be inaccurate.
 
-
-
 \subsection{Routing to the Next Position}
 Given the current position of the drone and the target position (e.g coordinates of the next sensor or of the starting position), we must calculate a valid route between the two points. Note that we do not need to end up \textbf{at} the target position, just within a certain distance from it (e.g 0.0002 for sensors).
 
@@ -81,7 +138,7 @@ This can be thought of as a tree search problem. The tree represents all possibl
 
 In my implementation, I use a modified A* search algorithm to find the path down the tree to a node that is within range of our target position. The algorithm consists of two lists: \texttt{closedPathPoints}, which stores all the nodes that we have visited (expanded) and \texttt{openPathPoints}, which stores all the nodes that we have yet to visit but whose parents have been visited.
 \begin{enumerate}[topsep=0pt, itemsep=0pt]
-  \item We begin with only the root node in \texttt{openPathPoints}. Remove this node from the list and 'expand' it to generate all its children nodes. These children nodes represent \textbf{valid} positions one step away from the current node.
+  \item We begin with only the root node in \texttt{openPathPoints}. Remove this node from the list and 'expand' it to generate all \textbf{valid} children nodes \footnote{To check if a child node is valid, we take the line segment formed by the parent node and the child node and see if it intersects (using the \texttt{java.awt.geom}) with an edge of the drone confinement area or no-fly-zones. If it does, it is invalid.}. These child nodes represent positions the drone can move to in one step that does not violate any of the rules (e.g regarding no-fly-zones).
   \begin{enumerate}[topsep=0pt, itemsep=0pt]
       \item Each child node gets assigned a \texttt{distanceScore} (among other attributes such as \texttt{prev}) which is the sum of the travelled distance from the root to the current node and the straight-line distance from the current node to the target position.
       \item We then select 5 of the child nodes with the smallest \texttt{distanceScore}. We do this to reduce the time complexity of the algorithm as using all child nodes would cause the algorithm to run slowly.
@@ -108,21 +165,30 @@ This algorithm has the advantage that it can handle no-fly-zones without much mo
 
 It is also worth mentioning here, that although \textbf{the algorithm is the same}, in the actual implementation we use \texttt{PathPoint} objects, which represent the movement of the drone and hence would correspond to the edges of the tree, rather than nodes as described above. However, \texttt{PathPoint} stores the nodes in \texttt{endPos} (and its parent in \texttt{startPos}) and attributes such as \texttt{distanceScore} correspond to the position of \texttt{endPos} and so the implementation details of the algorithm is very similar.
 
+\section{Class Documentation \texttt{aqmaps}}
+
+\subsection{\texttt{webserver}}
+
+\subsection{\texttt{drone}}
+
+
 \newpage
-
-\section{Class Documentation}
-
-
-\newpage
-
 \section{References}
 The following sources were used either to provide inspiration for my implementation or to directly aid in it (e.g. through example code or pseudocode):
 \begin{enumerate}
-    \item \href{https://en.wikipedia.org/wiki/Motion_planning#Grid-based_search}{Wikipedia - Motion Planning}
-    \item \href{https://en.wikipedia.org/wiki/Any-angle_path_planning}{Wikipedia - Any-angle Path Planning}
-    \item \href{https://en.wikipedia.org/wiki/A*_search_algorithm#}{Wikipedia - A* Search Algorithm}
-    \item \href{https://en.wikipedia.org/wiki/Best-first_search}{Wikipedia - Best First Search}
-    \item \href{https://stackoverflow.com/questions/16069106/how-to-compare-two-java-objects}{Stackoverflow - How to Compare Two Java Objects}
+    \item \href{https://en.wikipedia.org/wiki/Motion_planning#Grid-based_search}{Wikipedia - Motion planning}
+    \item \href{https://en.wikipedia.org/wiki/Any-angle_path_planning}{Wikipedia - Any-angle path planning}
+    \item \href{https://en.wikipedia.org/wiki/A*_search_algorithm#}{Wikipedia - A* search algorithm}
+    \item \href{https://en.wikipedia.org/wiki/Best-first_search}{Wikipedia - Best-first search}
+    \item \href{https://stackoverflow.com/questions/16069106/how-to-compare-two-java-objects}{Stackoverflow - How to compare two java objects}
 \end{enumerate}
 
+The following sources were used to help with the report either for the figures or for the formatting:
+\begin{enumerate}
+    \item \href{https://geojson.io}{geojson.io}
+    \item \href{https://creately.com/}{Creately}
+    \item \href{https://en.wikipedia.org/wiki/Class_diagram#Dependency}{Wikipedia - Class diagram}
+    \item \href{https://tex.stackexchange.com/questions/37581/latex-figures-side-by-side#37597}{Tex StackExchange - LaTeX figures side by side}
+    \item \href{https://tex.stackexchange.com/a/847}{Tex StackExchange - Remove ugly borders around clickable cross-references and hyperlinks}
+\end{enumerate}
 \end{document}
