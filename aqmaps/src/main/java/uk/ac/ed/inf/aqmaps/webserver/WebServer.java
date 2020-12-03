@@ -91,8 +91,8 @@ public class WebServer {
       throw new ResponseException("HttpResponse is null");
     }
     
-    if (response.statusCode() == 404) {
-      throw new ResponseException("404 Not Found: " + filePath);
+    if (response.statusCode() != 200) {
+      throw new ResponseException("Status code not 200 (returned " + response.statusCode() + " instead)");
     }
     
     return response; 

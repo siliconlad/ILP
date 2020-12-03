@@ -107,7 +107,7 @@ public class AStarDrone extends Drone {
     return routeToStart;
   }
   
-  private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double max_offset) {
+  private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double maxOffset) {
     // Stores all visited path points
     var closedPathPoints = new ArrayList<PathPoint>();
     
@@ -162,7 +162,7 @@ public class AStarDrone extends Drone {
       // Select new pathPoint
       currentPathPoint = this.getNextPathPoint(openPathPoints);
       openPathPoints.remove(currentPathPoint);
-    } while (getDistance(currentPathPoint.endPos, target) >= max_offset);
+    } while (getDistance(currentPathPoint.endPos, target) >= maxOffset);
     
     // Reconstruct path
     var routeToTarget = new ArrayList<PathPoint>();

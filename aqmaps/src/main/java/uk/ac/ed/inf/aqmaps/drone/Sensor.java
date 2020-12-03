@@ -5,16 +5,4 @@ public class Sensor {
   public Double battery;
   public String reading;
   public Coordinates coordinates;
-  
-  @Override
-  public String toString()  {
-    // Coordinates may not be set straight away
-    var coordinatesString = (this.coordinates == null) ? "null" : this.coordinates.toString();
-    
-    return "Sensor Object" + "\n" +
-           "Location: " + this.location + "\n" + 
-           "Battery: " + this.battery + "\n" +
-           "Reading: " + this.reading + "\n" +
-           "Coordinates: " + coordinatesString;
-  }
 }

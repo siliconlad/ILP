@@ -7,6 +7,9 @@
 \usepackage{mdframed}
 \usepackage{caption}
 \usepackage{xcolor}
+\usepackage[english]{babel}
+\usepackage{minted}
+\usepackage{longtable}
 \usepackage{hyperref}
 
 \graphicspath{ {./figures/} }
@@ -28,6 +31,9 @@
 \begin{document}
 
 \maketitle
+\thispagestyle{empty}
+
+\newpage
 
 \tableofcontents
 
@@ -165,14 +171,992 @@ This algorithm has the advantage that it can handle no-fly-zones without much mo
 
 It is also worth mentioning here, that although \textbf{the algorithm is the same}, in the actual implementation we use \texttt{PathPoint} objects, which represent the movement of the drone and hence would correspond to the edges of the tree, rather than nodes as described above. However, \texttt{PathPoint} stores the nodes in \texttt{endPos} (and its parent in \texttt{startPos}) and attributes such as \texttt{distanceScore} correspond to the position of \texttt{endPos} and so the implementation details of the algorithm is very similar.
 
-\section{Class Documentation \texttt{aqmaps}}
+\section{Class Documentation}
 
-\subsection{\texttt{webserver}}
+\subsection{\texttt{uk.ac.ed.inf.aqmaps}}
 
-\subsection{\texttt{drone}}
+\addcontentsline{toc}{subsubsection}{\texttt{App}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{App}} \\
+    
+        \hline \hline
+    
+        & & \\
+        
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates the application as described in the specification.
+            \end{minipage} 
+        } \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public static void main(String[] args)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            This method is the main entry point into the application. \\
+        
+            It is responsible for pulling in the different components defined in the \texttt{drone} and \texttt{webserver} sub-packages to provide the expected top-level behaviour of the application (i.e. process the command-line inputs, get information from the web server, calculate the route of the drone and save this information in the two output files). \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{args}: command-line arguments as defined in the specification
+            \end{itemize}
+        \end{minipage} & \\ & & \\ \hline
+    \end{tabular}
+\end{center}
 
 
-\newpage
+
+\subsection{\texttt{uk.ac.ed.inf.aqmaps.webserver}}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{WebServer}}
+\begin{center}
+    \begin{longtable}{ |p{2em} c c| } \hline
+    \multicolumn{3}{ |c| }{\texttt{WebServer}} \\
+    
+    \hline \hline
+    
+    & & \\
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{\textwidth}}
+            This class encapsulates methods relating to communication with the web server. The class attributes are \texttt{client} which stores the \texttt{HttpClient} that sends the HTTP get requests (this is static because we want to prevent multiple instances of the client being created), \texttt{noFlyZonePath} which stores the file path to the \texttt{geojson} file for the no-fly-zones, \texttt{protocol} which stores the protocol to use in the URI (e.g. http), \texttt{host} which stores the host name of the web server and \texttt{port} which stores the port number to access.
+        \end{minipage} 
+    } \\
+    
+    & & \\
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|public class WebServer(String protocol, String host, String port)|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        Creates and initializes a \texttt{WebServer} object that sends requests to the specified web server.  \\
+        
+        Parameters:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{protocol}: the protocol to use to send requests (e.g \texttt{http})
+            \item \texttt{host}: the host name of the server to send requests to (e.g \texttt{localhost})
+            \item \texttt{port}: the port number to connect to (e.g \texttt{80})
+        \end{itemize}
+    \end{minipage} & \\
+
+    %%%%%%%%%%%
+    & & \\
+    %%%%%%%%%%%
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|public ArrayList<Sensor> getSensorsWithCoordinates(String year, String month, String day)|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        This method returns a list of \texttt{Sensor} objects for the specified date \textbf{with} coordinate information pre-populated. This is a convenience function built on top of \texttt{getSensors} and \texttt{getWhat3WordsDetails}. This method will send multiple HTTP requests, one for the relevant \texttt{air-quality-data.json} file and one for each sensor to get its coordinate position. \\
+        
+        Parameters:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{year}: year of the desired date
+            \item \texttt{month}: month of the desired date
+            \item \texttt{day}: day of the desired date
+        \end{itemize}
+        
+        \vspace{1em}
+        
+        Throws:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{SendRequestException}: if another exception occurs while creating or sending the request
+            \item \texttt{ResponseException}: if the response object is \texttt{null} or the response code is not 200
+        \end{itemize}
+    \end{minipage} & \\
+    
+    %%%%%%%%%%%
+    & & \\
+    %%%%%%%%%%%    
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|public ArrayList<Sensor> getSensors(String year, String month, String day)|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        This method returns a list of \texttt{Sensor} objects \textbf{without} coordinate information (i.e the \texttt{coordinates} attribute of each object is \texttt{null}). Hence, this method only sends a single request to the server to obtain the \texttt{air-quality-data.json} file for the specified date. \\
+        
+        Parameters:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{year}: year of the desired date
+            \item \texttt{month}: month of the desired date
+            \item \texttt{day}: day of the desired date
+        \end{itemize}
+        
+        \vspace{1em}
+        
+        Throws:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{SendRequestException}: if another exception occurs while creating or sending the request
+            \item \texttt{ResponseException}: if the response object is \texttt{null} or the response code is not 200
+        \end{itemize}
+    \end{minipage} & \\ 
+    
+    %%%%%%%%%%%    
+    & & \\
+    %%%%%%%%%%%
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|public What3Words getWhat3WordsDetails(String location)|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        This method returns a \texttt{What3Words} object for the specified What3Words string. This is useful as the resulting object contains the coordinate position of the sensor at the What3Words location. Only one request to the server is made to get the \texttt{details.json} file of the given location string.\\
+        
+        Parameters:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{location}: the What3Words location (e.g. ``\texttt{hurt.green.filer}")
+        \end{itemize}
+        
+        \vspace{1em}
+        
+        Throws:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{SendRequestException}: if another exception occurs while creating or sending the request
+            \item \texttt{ResponseException}: if the response object is \texttt{null} or the response code is not 200
+        \end{itemize}
+    \end{minipage} & \\
+    
+    %%%%%%%%%%%    
+    & & \\
+    %%%%%%%%%%%
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|public FeatureCollection getNoFlyZones()|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        This method returns the no-fly-zone information stored in \texttt{buildings/no-fly-zones.geojson} on the web server as a \texttt{FeatureCollection}. \\
+        
+        Throws:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{SendRequestException}: if another exception occurs while creating or sending the request
+            \item \texttt{ResponseException}: if the response object is \texttt{null} or the response code is not 200
+        \end{itemize}
+    \end{minipage} & \\ 
+    
+    %%%%%%%%%%%    
+    & & \\
+    %%%%%%%%%%%    
+    
+    \multicolumn{3}{|l|}{
+        \begin{minipage}{{0.9\textwidth}}
+            \mint[fontsize=\small]{java}|private HttpResponse<String> sendRequest(String filePath)|
+            \vspace{-0.5em}
+        \end{minipage}
+    } \\
+    
+    & \begin{minipage}{0.9\textwidth}
+        This method is a utility function that sends a HTTP get request to the web server asking for the specified file and returns the \texttt{HttpResponse<String>} object if the status code is 200, otherwise an exception is thrown. \\
+        
+        Parameters:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{filepath}: the path to the desired resource on the web server
+        \end{itemize}
+        
+        \vspace{1em}
+        
+        Throws:
+        \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+            \item \texttt{SendRequestException}: if another exception occurs while creating or sending the request
+            \item \texttt{ResponseException}: if the response object is \texttt{null} or the response code is not 200
+        \end{itemize}
+    \end{minipage} & \\     
+    
+    & & \\ \hline
+\end{longtable}
+\end{center}
+
+
+\vspace{-2.5em}
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{What3Words}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{What3Words}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates all the information for a particular What3Words location string stored on the web server as described in the specification. It has no methods, just used to encapsulate the information.
+            \end{minipage} 
+        } \\
+    
+        & & \\ \hline
+   \end{tabular}
+\end{center}
+
+
+\vspace{-1.5em}
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{SendRequestException}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{SendRequestException}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class provides a layer of abstraction over all errors that relate to the creation and sending of a HTTP request to the target web server.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public SendRequestException(String message)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and initializes a \texttt{SendRequestException} with the provided message. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{message}: the message to be shown when the exception is thrown
+            \end{itemize}
+        \end{minipage} & \\ & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\vspace{-1.5em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{ResponseException}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{ResponseException}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class provides a layer of abstraction over all errors that relate to the HTTP response (or lack thereof) from the target web server.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public ResponseException(String message)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and initializes a \texttt{ResponseException} with the provided message. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{message}: the message to be shown when the exception is thrown
+            \end{itemize}
+        \end{minipage} & \\ & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\subsection{\texttt{uk.ac.ed.inf.aqmaps.drone}}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{Drone}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{Drone}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This is an \textbf{abstract class} which encapsulates methods and attributes related to the physical characteristics that affect the behaviour of the drone. It includes attributes that define the confinement area as a set of boundaries or line segments (using the \texttt{java.awt.geom} package) as well as other constants defined in the specification (i.e max number of moves, the maximum range of a sensor reading, maximum allowable distance from start position when returning and distance of each move of the drone). It also stores some non-static attributes such as \texttt{battery} which keeps track of the battery level of the drone, \texttt{boundaryLines} which stores all the line segments which the drone cannot intersect, and \texttt{noFlyZones} which stores the no-fly-zones.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|Drone(FeatureCollection noFlyZones)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Initializes the set of line segments which the drone is not allowed to intersect while flying. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{noFlyZones}: the set of no-fly-zones the drone is not allowed to cross while flying
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|protected boolean isMoveValid(Coordinates start, Coordinates end)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Checks to see if the move from \texttt{start} to \texttt{end} enters a no-fly-zone or leaves the confinement area by looking to see if the move intersects any of the boundaries in \texttt{boundaryLines}. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{start}: the coordinate position before the move
+                \item \texttt{end}: the coordinate position after the move
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|protected static ArrayList<Line2D> getBoundaryLines(FeatureCollection noFlyZones)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+             Returns an array of line segments that describe the boundaries of the no-fly-zones.\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{noFlyZones}: the set of no-fly-zones the drone is not allowed to cross while flying
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|protected static Coordinates move(Coordinates currentPos, int direction)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the position of the drone if it were to move in the given direction from the given position. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPos}: current coordinate position of the drone
+                \item \texttt{direction}: direction the drone is to move
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|protected static double getDistance(Coordinates start, Coordinates end)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the distance, in degrees, between the two specified coordinate positions. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{start}: first coordinate position
+                \item \texttt{end}: second coordinate position
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\vspace{-2em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{AStarDrone}}
+\begin{center}
+    \begin{longtable}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{AStarDrone}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates the behaviour of the drone (i.e the drone control algorithm). It extends the \texttt{Drone} abstract class to obtain the physical constraints. The class attributes are \texttt{notVisited}, which keeps track of the sensors the drone has not yet visited, \texttt{route} which stores a list of \texttt{PathPoint} objects that gradually form the route of the drone, \texttt{startPos} which remembers the starting position of the drone so that it can be returned to and \texttt{currentPos} which keeps track of the current position of the drone. There is also the static attribute \texttt{LIMIT\_BRANCHING\_FACTOR} which is explained in Section \ref{drone_alg}.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public AStarDrone(ArrayList<Sensor> sensors, Coordinates startPos, FeatureCollection noFlyZones)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and initializes the \texttt{AStarDrone} object, then calculates the route using \texttt{calculateRoute()}. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{sensors}: the list of sensors the drone should visit on its route
+                \item \texttt{startPos}: the starting position of the drone 
+                \item \texttt{noFlyZones}: the no-fly-zones the drone must avoid
+            \end{itemize}
+        \end{minipage} & \\ 
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public Route getRoute()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns a \texttt{Route} object that encapsulates the route of the drone.
+        \end{minipage} & \\ 
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private void calculateRoute()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Calculates the route using the drone control algorithm described in Section \ref{drone_alg}.
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private Sensor getClosestSensor(Coordinates currentPos, ArrayList<Sensor> sensors)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the closest sensor from the given sensors to the given position using the distance measure defined in \texttt{Drone}. If two sensors are equidistant, the sensor closer to the start of the list is returned.\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPos}: the current position from which to find the closest sensor
+                \item \texttt{sensors}: the list sensors from which the closest sensor is found
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+        
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private ArrayList<PathPoint> getRouteToSensor(Coordinates currentPos, Sensor sensor)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the route from the given position to the given sensor. This method always returns a route of length greater than or equal to one. Internally uses the \texttt{getRoute} method to calculate the route. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPos}: the starting position from which to calculate the route
+                \item \texttt{sensor}: the target sensor the route must reach (within a certain tolerance)
+            \end{itemize}
+            
+            \vspace{1em}
+            
+            Throws:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item BatteryLimitException: if the length of the route is more than the drone's battery level.
+            \end{itemize}
+        \end{minipage} & \\ 
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private ArrayList<PathPoint> getRouteToStart(Coordinates currentPos)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the route from the given position to the original starting position of the drone. This may return a route of length zero if the given position is within acceptable range of the original starting position. Internally uses the \texttt{getRoute} method to calculate the route.\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPos}: the starting position from which to calculate the route
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\footnotesize]{java}|private ArrayList<PathPoint> getRoute(Coordinates currentPos, Coordinates target, double maxOffset)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Calculates and returns the route from the given position to within \texttt{maxOffset} of the target position. \texttt{maxOffset} allows us to utilize the same method to calculate the route to sensors or back to the starting position. It will always return a route of length 1 or more. This method uses the algorithm described in Section \ref{drone_alg} to find the route.\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPos}: the starting position from which to calculate the route
+                \item \texttt{target}: the target position the route should aim to
+                \item \texttt{maxOffset}: the maximum allowable distance from the target position within which the route is considered to have reached the target
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+        
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private PathPoint getNextPathPoint(ArrayList<PathPoint> nextPathPoints)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the \texttt{PathPoint} object with the lowest \texttt{distanceScore}. In other words, it returns the \texttt{PathPoint} object that takes us closest to the target destination. The measure of distance is dependent on the drone control algorithm (see Section \ref{drone_alg} for details on the current definition).\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{nextPathPoints}: the list of \texttt{PathPoint} objects to choose from
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+        
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\footnotesize]{java}|private ArrayList<PathPoint> generatePathPoints(PathPoint currentPathPoint, Coordinates target, int limit)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and returns a list of \texttt{PathPoint} objects representing the potential next move of the drone in the route to \texttt{target}. \texttt{limit} restricts the size of the returned array to help with time complexity. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{currentPathPoint}: the \texttt{PathPoint} object representing the latest move of the drone
+                \item \texttt{target}: the coordinates of the target position
+                \item \texttt{limit}: places an upper-bound on the number of \texttt{PathPoint} objects to return
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\ \hline
+    \end{longtable}
+\end{center}
+
+
+
+\vspace{-2em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{Route}}
+\begin{center}
+    \begin{longtable}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{Route}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates the route of the drone and provides convenient methods to transform and save the route as different formats. Its class attributes are \texttt{dronePath} which stores the route taken by the drone, \texttt{skippedSensors} which stores the sensors not visited by the drone (important as the markers are different for these sensors), \texttt{visitedSensors} which stores the sensors visited by the drone, \texttt{noFlyZones} which stores the no-fly-zones and \texttt{map} which stores the GeoJSON map generated by the \texttt{buildMap} method.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\footnotesize]{java}|public Route(ArrayList<PathPoint> dronePath, ArrayList<Sensor> skippedSensors, FeatureCollection noFlyZones)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and initializes the \texttt{Route} object. Gets the list of visited sensors from \texttt{dronePath} for convenience as it simplifies the code when creating the GeoJSON map. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{dronePath}: the route taken by the drone
+                \item \texttt{skippedSensors}: the list of sensors not visited by the drone on its route
+                \item \texttt{noFlyZones}: the list of no-fly-zones
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public void saveMap(String fileName)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Saves the created GeoJSON map to a file of the given name. Note that \texttt{buildMap} must be run first, or a \texttt{RuntimeException} is thrown. This is because the map has some customizable features that the user needs to decide on (i.e displaying the no-fly-zones or not).\\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{fileName}: name of the file to be created
+            \end{itemize}
+            
+            Throws:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{IOException}: if I/O error occurs (thrown by \texttt{FileWriter})
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public void saveRoute(String fileName)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Saves the route in a text file in the format given by the specification. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{fileName}: name of the file to be created
+            \end{itemize}
+            
+            Throws:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{IOException}: if I/O error occurs (thrown by \texttt{FileWriter})
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public void buildMap(boolean showNoFlyZones)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates the GeoJSON map which is a \texttt{FeatureCollection} that includes the flightpath as a \texttt{Feature} of type \texttt{LineString}, the sensors as \texttt{Feature}s of type \texttt{Point} and optionally the no-fly-zones as \texttt{Feature}s of type \texttt{Polygon}. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{showNoFlyZones}: whether the no-fly-zones should be included in the GeoJSON map
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private ArrayList<Sensor> getVisitedSensorsFromDronePath()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            A utility function that returns the list of visited sensors from \texttt{dronePath} (set in the constructor).
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private Feature createPathFeature()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and returns a \texttt{Feature} of type \texttt{LineString} from the \texttt{dronePath}. The \texttt{LineString} is a series of \texttt{Point} objects representing the coordinate positions along the route.
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private Feature createSensorMarker(Sensor sensor, boolean visited)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and returns the given sensor as a \texttt{Feature} of type \texttt{Point}. This includes adding various \texttt{Feature} properties relating to the symbol and color of the \texttt{Feature} as per the specification. \texttt{sensor} must have all its attributes populated, otherwise the returned \texttt{Feature} will not be useful. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{sensor}: the sensor for which to create the \texttt{Feature} for
+                \item \texttt{visited}: indicates whether the sensor was visited or skipped
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private String getHexColor(Sensor sensor, boolean visited)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the color, in hexadecimal, determined by the sensor information and whether the sensor was visited or not (as per the specification). \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{sensor}: the sensor information used to determine the returned color
+                \item \texttt{visited}: indicates whether the sensor was visited or skipped
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|private String getMarkerSymbol(Sensor sensor, boolean visited)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the marker symbol (as defined by the specification) determined by the sensor information and whether the sensor was visited or not. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{sensor}: the sensor information used to determine the returned marker symbol
+                \item \texttt{visited}: indicates whether the sensor was visited or skipped
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\ \hline
+    \end{longtable}
+\end{center}
+
+
+\vspace{-1.5em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{Sensor}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{Sensor}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates all the information relating to a sensor (i.e. What3Words \texttt{location}, \texttt{battery} value, sensor \texttt{reading}, and \texttt{coordinates} position of the sensor) into a single object.
+            \end{minipage} 
+        } \\
+        
+        & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\vspace{-1.5em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{PathPoint}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{PathPoint}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates all the information relating to a single move of the drone (i.e position before the move as \texttt{startPos}, position after the move as \texttt{endPos}, the \texttt{direction} of the move and the \texttt{sensor} connected after the move). It also contains three other attributes which are used by the drone control algorithm and has no meaning outside this context. \texttt{distanceTravelled} shows the distance travelled by the drone from the start of the sub-route to \texttt{endPos} (hence includes the movement in this \texttt{PathPoint} object). \texttt{distanceScore} is the same as described in Section \ref{drone_alg}. \texttt{prev} points to the previous \texttt{PathPoint} object in the sub-route.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public String toString()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns the attributes as a string that matches the format of a line in the flightpath txt file. \\
+        \end{minipage} & \\ & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\vspace{-1.5em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{Coordinates}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{Coordinates}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class encapsulates the latitude (\texttt{lat}) and longitude (\texttt{lng}) of a coordinate position in a single object.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public String toString()|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns a string representation of the object that fits the format of the flightpath txt file. \\
+        \end{minipage} & \\
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public boolean equals(Object obj)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Returns true if the given object is of type \texttt{Coordinates} and has the same latitude and longitude values as determined by \texttt{Double.compare()}. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{obj}: object to be compared with
+            \end{itemize}
+        \end{minipage} & \\
+        
+        & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
+
+\vspace{-1.5em}
+
+
+
+\addcontentsline{toc}{subsubsection}{\texttt{BatteryLimitException}}
+\begin{center}
+    \begin{tabular}{ |p{2em} c c| } \hline
+        \multicolumn{3}{ |c| }{\texttt{BatteryLimitException}} \\
+    
+        \hline \hline
+        
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{\textwidth}}
+                This class represents the event where the route to a sensor generated by the drone control algorithm is longer than what the battery of the drone allows.
+            \end{minipage} 
+        } \\
+    
+        & & \\
+    
+        \multicolumn{3}{|l|}{
+            \begin{minipage}{{0.9\textwidth}}
+                \mint[fontsize=\small]{java}|public BatteryLimitException(String message)|
+                \vspace{-0.5em}
+            \end{minipage}
+        } \\
+    
+        & \begin{minipage}{0.9\textwidth}
+            Creates and initializes a \texttt{BatteryLimitException} with the provided message. \\
+        
+            Parameters:
+            \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
+                \item \texttt{message}: a message to be shown when the exception is thrown
+            \end{itemize}
+        \end{minipage} & \\ & & \\ \hline
+    \end{tabular}
+\end{center}
+
+
 \section{References}
 The following sources were used either to provide inspiration for my implementation or to directly aid in it (e.g. through example code or pseudocode):
 \begin{enumerate}
