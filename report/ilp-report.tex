@@ -45,18 +45,16 @@
 \section{Software Architecture}
 When reading the coursework specification, it was clear that there were two distinct components to this practical. The first being the \textbf{web server} and the second being the \textbf{drone}. For this reason, I decided to create two sub-packages within my \texttt{aqmaps} package to contain all the classes related to each component. My \texttt{App.java} puts the pieces together to form the final application (e.g. by dealing with the command-line inputs and calling the appropriate public methods of objects of the classes defined in the sub-packages).
 
-The overall structure is shown in Figure \ref{fig:uml}. The links between the classes indicate a direct relationship (e.g an object of one class is an attribute of another, or a method of one class utilises an object of another).
+The overall structure is shown in Figure \ref{fig:uml}. The links between the classes indicate a direct relationship (e.g a method of an object of one class requires an object of another). Self-links are not included.
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{uml-class-diagram}
+    \includegraphics[width=\textwidth]{class-diagram}
     \captionof{figure}{Class diagram of \texttt{aqmaps}}
     \label{fig:uml}
 \end{figure}
 
 \subsection{\texttt{webserver}}
-The web server sub-package deals exclusively with \textbf{obtaining information from the web server}. Because this is a very important part of the practical, it felt appropriate to dedicate an entire sub-package to this.
-
-The sub-package contains 4 classes:
+The \texttt{webserver} sub-package deals exclusively with \textbf{obtaining information from the web server}. The sub-package contains 4 classes related to this task:
 \begin{enumerate}[topsep=0pt, itemsep=0pt]
     \item \texttt{WebServer}
     \item \texttt{What3Words}
@@ -64,12 +62,12 @@ The sub-package contains 4 classes:
     \item \texttt{ResponseException}
 \end{enumerate}
 
-The \texttt{WebServer} is the main class in this package and provides a layer of abstraction over all communication to the web server. It made sense to create a web server class because the web server is an standalone entity within our system. The \texttt{WebServer} class models this and provides some useful methods for retrieving data from the server. The other three classes support the main \texttt{WebServer} class. The \texttt{What3Words} class is used to store the JSON information obtained from the \texttt{words/} directory on the web server as a Java object. This is required by \texttt{gson}. We also use the \texttt{Sensor} object from the \texttt{drone} sub-package when obtaining sensor information from the web server. The reason that class was included in the \texttt{drone} sub-package and not this package was because it did not make much sense to store a class that represents a physical sensor in a package dedicated to dealing with a web server. It made more sense to include it in the drone package where the drone is modelled due to the close relationship that these two objects have in this practical.
+The \texttt{WebServer} is the main class in this package and provides a layer of abstraction over all communication to the web server. It made sense to create a web server class because the web server is an standalone entity within our system. The \texttt{WebServer} class models this and provides some useful methods for retrieving data from the server. The other three classes support the main \texttt{WebServer} class. The \texttt{What3Words} class is used to store the JSON information obtained from the \texttt{words/} directory on the web server as a Java object. It is required to parse the JSON with \texttt{gson}. We also use the \texttt{Sensor} class from the \texttt{drone} sub-package when obtaining sensor information from the web server. The reason this class was included in the \texttt{drone} sub-package was because it did not make much sense to store a class that represents a physical sensor in a package dedicated to dealing with a web server. It made more sense to include it in the drone package where the drone is modelled due to the close relationship that these two objects have in this practical. A similar reasoning applies to \texttt{Coordinates} (described more in the next section).
 
-The other two classes (\texttt{SendRequestException} and \texttt{ResponseException}) were created to abstract over the specific exceptions that can occur when communicating with the web server. The \texttt{SendRequestException} abstracts over the exceptions related to the creation and sending of the HTTP request (e.g. if an invalid URI was provided). The \texttt{ResponseException} abstracts over the exceptions relating to the HTTP reponse from the web server (e.g. if a 404 error was returned). This provides a cleaner interface for the user of the web server that hides away unnecessary complexity.
+The other two classes (\texttt{SendRequestException} and \texttt{ResponseException}) were created to abstract over the specific exceptions that can occur when communicating with the web server. The \texttt{SendRequestException} abstracts over the exceptions related to the creation and sending of the HTTP request (e.g. if an invalid URI was provided). The \texttt{ResponseException} abstracts over the exceptions relating to the HTTP reponse from the web server (e.g. if a 404 response was returned). This provides a cleaner interface to the \texttt{webserver} class as it abstracts away unnecessary complexity and verbosity.
 
 \subsection{\texttt{drone}}
-This sub-package consists of a set of classes related to the drone's \textbf{internal representation of the world}. In other words, these classes together model the problem detailed in the specification of determining and presenting the flight path of a drone around a geographical area with no-fly-zones to collect readings from a set of sensors. This may seem like a lot                                of disparate ideas, but they are in fact very closely related.
+This sub-package consists of a set of classes related to the \textbf{drone and its internal representation of the world}. In other words, these classes together model the problem detailed in the specification of finding, and presenting, the flight path of a drone around a geographical area with no-fly-zones, in order to collect readings from a set of sensors. This may seem like a lot of disparate ideas, but they are very closely related.
 
 There are 7 classes in this sub-package:
 \begin{enumerate}[topsep=0pt, itemsep=0pt]
@@ -82,22 +80,22 @@ There are 7 classes in this sub-package:
     \item \texttt{BatteryLimitException}
 \end{enumerate}
 
-The \texttt{Drone} class models the \textbf{physical properties that affect the drone}. For example, it defines the method \texttt{move} which models how to drone moves in the physical world. \texttt{getDistance} represents the measure of distance between two points in the real world. It also has attributes that model the confinement area that constrain the drone as detailed in the specification and provides methods for modelling the no-fly-zones. All together this class models the relationship between the drone and the physical world as detailed in the specification. For this reason, the \texttt{Drone} class is abstract as instantiating it on its own is undefined. Instead this class is inherited by all drones to allow it to obey the physical contraints posed by the specification.
+The \texttt{Drone} class models the \textbf{physical properties that affect the drone}. For example, it defines the method \texttt{move} which models how the drone moves and \texttt{getDistance} which defines the measure of distance between two points in the real world. It also has attributes that describe the confinement area and methods for processing the no-fly-zones. All together, this class models the relationship between the drone and the physical world as detailed in the specification. For this reason, the \texttt{Drone} class is abstract as instantiating it on its own is doesn't make much sense.
 
-This brings us to the \texttt{AStarDrone} class which models the \textbf{behaviour of the drone}. It inherits from the \texttt{Drone} class to understand the physical world, then it uses its own methods to navigated within that world. This is where the drone control algorithm (detailed in section \ref{drone_alg}) is implemented. The class retrieves the initial starting conditions of the world (i.e starting position, sensors, and no-fly-zones) and calculates an appropriate route to visit all the sensors and return to the starting position.
+This brings us to the \texttt{AStarDrone} class which models the \textbf{behaviour of the drone}. It inherits from the \texttt{Drone} class to understand the physical world, then it uses its own methods to navigated within that world. This class is where the drone control algorithm (detailed in section \ref{drone_alg}) is implemented. It receives the initial starting conditions of the world (i.e sensors, starting position, and no-fly-zones) to calculate an appropriate route which visits all the sensors and returns to the original starting position.
 
 \begin{mdframed}
-In my original implementation, I only had one \texttt{GreedyDrone} class which contained the implementation of both \texttt{Drone} and \texttt{AStarDrone}. I then decided to create a new drone control algorithm based on the A* search algorithm as the greedy approach I was using was giving me some problems. It was when I was doing this that I noticed that some functions and attributes were being duplicated in both the \texttt{GreedyDrone} class and the then newly created \texttt{AStarDrone} class. This was the original motivation behind creating an abstract class that `pulled out' this shared implementation. Upon closer inspection I realized that the code I was pulling out reflected the rules of the physical world in which the drone was operating under as described in specification (e.g distance of a single move of the drone, the distance measure, the representation of the confinement area, etc). This was a pleasant surprise.
+In my original implementation, I only had one \texttt{GreedyDrone} class which combined both \texttt{Drone} and \texttt{AStarDrone} (but used a greedy approach instead of an A* based approach). I then decided to create a new drone control algorithm based on the A* search algorithm as the greedy approach I was using was giving me some problems. I soon noticed that some functions and attributes were being duplicated in both the \texttt{GreedyDrone} class and the then newly created \texttt{AStarDrone} class. This was the original motivation behind creating a parent class; to `pull out' this shared implementation to make the code more maintainable (DRY!). The abstract nature of the parent class became apparent when, upon closer inspection, I realized that the code I was pulling out reflected the rules of the physical world in which the drone was operating under as described in the specification (e.g distance of a single move of the drone, the distance measure, the confinement area, etc).
 \end{mdframed}
 
-The \texttt{Route} object is the third main class within this sub-package. This class arose due to a strong emphasis that the specification placed on the route of the drone as a GeoJSON map and as a flightpath in txt format. I felt that modelling the route itself was appropriate as the GeoJSON map and the flightpath were simply different representations of the same underlying `object` i.e the route. This class provides convenient methods to obtain both the flightpath and the GeoJSON map of the route as \texttt{.txt} and \texttt{.geojson} files respectively.
+The \texttt{Route} object is the third main class within this sub-package. This class arose due to a strong emphasis that the specification placed on the route of the drone as a GeoJSON map and as a flightpath in txt format. I felt that modelling the route itself was appropriate as the GeoJSON map and the flightpath were simply different representations of the same underlying concept. This class provides convenient methods to obtain both the flightpath and the GeoJSON map of the route as \texttt{.txt} and \texttt{.geojson} files respectively.
 
-The two classes \texttt{Coordinates} and \texttt{PathPoint} both represent important concepts that map to the real world. The \texttt{Coordinates} class represents the latitude and longitude values of a position on the map as described in the specification. This abstraction is incredibly useful for representing the position of objects such as the drone or the sensors. The \texttt{PathPoint} object represents a single movement of the drone from one position to another. This class was created to represent the concept outlined in the specification for each line of the flightpath text file. It is also used within the drone to represent the global route as a sequence of drone movements and the drone control algorithm as a way to represent the different possible movement options that the drone has at each particular step.
+The two classes \texttt{Coordinates} and \texttt{PathPoint} both represent important concepts in the drone's internal representation of the world. The \texttt{Coordinates} class represents the latitude and longitude values of a position in the world as described in the specification. This abstraction is incredibly useful for representing the position of objects such as the sensors or the drone itself. The \texttt{PathPoint} object represents a single movement of the drone from one position to another. This class is used to represent each line of the flightpath txt file. It is also used within the drone to represent the global route as a sequence of drone movements and in the drone control algorithm as a way to represent the different possible movement options that the drone has at each particular position.
 
-Finally, the \texttt{BatteryLimitException} class is used to represent the event when a route calculated by the drone control algorithm is longer than the battery of the drone allows. By raising this exception the control algorithm can react and create a contingency plan (e.g by returning to the starting position). This class is not essential but proved to be convenient when implementing the control algorithm.
+Finally, the \texttt{BatteryLimitException} class is used to represent the event where the route to a sensor generated by the drone control algorithm is longer than what the battery of the drone allows. By raising this exception the control algorithm can react and create a contingency plan (e.g by returning to the starting position). This class is not essential but proved to be convenient when implementing the control algorithm.
 
 \section{Drone Control Algorithm} \label{drone_alg}
-The specification document describes a modified version of the well known \href{https://en.wikipedia.org/wiki/Travelling\_salesman\_problem}{travelling salesman problem} (TSP) where we look to visit each sensor and return to the starting position. Of course, it is not exactly the same problem as the path to each sensor is not a single link but rather a series of restricted movements. Hence, the combination of the travelling salesman problem being NP-complete and the movements of the drone made the complexity of the problem very apparent from the beginning.
+The specification describes a similar problem to the well known \href{https://en.wikipedia.org/wiki/Travelling\_salesman\_problem}{travelling salesman problem} (TSP) where we look to visit each sensor and return to the starting position. It is not exactly the same problem as the path to each sensor is not a single link but rather a series of restricted movements. Hence, the combination of the travelling salesman problem being NP-complete and the movements of the drone made the complexity of the problem very apparent from the beginning.
 
 Knowing that finding an algorithm that would solve the entire path planning problem optimally would not be feasible, I broke the problem into two sub-problems. The first is the order in which the drone visits the sensors and the second is finding the sequence of valid moves to get from one coordinate position to another.
 
@@ -133,7 +131,7 @@ With these two components, we can find the entire route:
 \subsection{Ordering of the Sensors}
 The first problem is determining the order in which the drone should visit the sensors. To keep things simple, I chose a greedy approach, and this is what the drone uses in the implementation. The algorithm calculates the straight-line distance between a given coordinate position (e.g. current position of the drone) and the coordinates of a list of sensors (e.g. list of unvisited sensors) and returns the closest sensor.
 
-Although this algorithm is simple and runs very quickly (linear in the number of sensors), it is unlikely to produce an optimal sequence of sensors to visit. We can see this with Figure \ref{fig:example1} where the drone has to take long routes across the map to reach sensors that it missed. In addition, it does not take into account the no-fly-zones of the map and how this affects the distances between sensors. But given the TSP nature of this problem, obtaining good solutions requires significant effort in implementing complex algorithms. Hence, I believe this greedy algorithm is a good starting point due to its balance of simplicity and performance.
+Although this algorithm is simple and runs very quickly (linear in the number of sensors), it is unlikely to produce an optimal sequence of sensors to visit. We can see this with Figure \ref{fig:example1} where the drone has to travel long distances across the map to visit the next sensor when a different ordering would have prevented this from happening. In addition, it does not take into account the no-fly-zones of the map and how this affects the distances between sensors. But given the TSP nature of this problem, obtaining good solutions requires significant effort in implementing complex algorithms. Hence, I believe this greedy algorithm is a good starting point due to its balance of simplicity and performance.
 
 It is worth noting that the drone only looks for the next sensor and does not pre-compute the order of all sensors. This decision was taken because the drone does not necessarily reach the exact coordinates of the target sensor and hence pre-computing everything from the beginning would be inaccurate.
 
@@ -144,7 +142,7 @@ This can be thought of as a tree search problem. The tree represents all possibl
 
 In my implementation, I use a modified A* search algorithm to find the path down the tree to a node that is within range of our target position. The algorithm consists of two lists: \texttt{closedPathPoints}, which stores all the nodes that we have visited (expanded) and \texttt{openPathPoints}, which stores all the nodes that we have yet to visit but whose parents have been visited.
 \begin{enumerate}[topsep=0pt, itemsep=0pt]
-  \item We begin with only the root node in \texttt{openPathPoints}. Remove this node from the list and 'expand' it to generate all \textbf{valid} children nodes \footnote{To check if a child node is valid, we take the line segment formed by the parent node and the child node and see if it intersects (using the \texttt{java.awt.geom}) with an edge of the drone confinement area or no-fly-zones. If it does, it is invalid.}. These child nodes represent positions the drone can move to in one step that does not violate any of the rules (e.g regarding no-fly-zones).
+  \item We begin with the root node. 'Expand' it to generate all \textbf{valid} children nodes \footnote{To check if a child node is valid, we take the line segment formed by the parent node and the child node and see if it intersects (using the \texttt{java.awt.geom} package) with an edge of the drone confinement area or no-fly-zones. If it does, it is invalid.}. These child nodes represent positions the drone can move to in one step that does not violate any of the rules (e.g regarding no-fly-zones).
   \begin{enumerate}[topsep=0pt, itemsep=0pt]
       \item Each child node gets assigned a \texttt{distanceScore} (among other attributes such as \texttt{prev}) which is the sum of the travelled distance from the root to the current node and the straight-line distance from the current node to the target position.
       \item We then select 5 of the child nodes with the smallest \texttt{distanceScore}. We do this to reduce the time complexity of the algorithm as using all child nodes would cause the algorithm to run slowly.
@@ -152,7 +150,7 @@ In my implementation, I use a modified A* search algorithm to find the path down
   
   \item Add the 5 nodes to \texttt{openPathPoints} and add the root to \texttt{closedPathPoints}
   
-  \item Select the node from \texttt{openPathPoints} with the lowest \texttt{distanceScore}. If in range of the target position, skip to step 6, otherwise expand it as per step 1.
+  \item Select the node from \texttt{openPathPoints} with the lowest \texttt{distanceScore} and remove it from the list. If in range of the target position, skip to step 6, otherwise expand it as per step 1.
   
   \item Before adding each of the 5 nodes to \texttt{openPathPoints}, we do two checks:
   \begin{enumerate}[topsep=0pt, itemsep=0pt]
@@ -169,14 +167,16 @@ Notice that this algorithm will always produce a route of at least length 1 beca
 
 This algorithm has the advantage that it can handle no-fly-zones without much modification (we just don't generate the child nodes that cross the no-fly-zones). This contrasts with my original algorithm that used a greedy approach which would get `stuck' oscillating between two nodes if the target position was on the other side of a no-fly-zone. This is because unlike the A* search algorithm, the greedy algorithm did not take into account the distance from the root node. However, the time complexity of the A* algorithm is not as good (hence step 1.b) so the time the algorithm takes to find routes over larger distances become much more noticeable which puts the scalability of this algorithm into question.
 
-It is also worth mentioning here, that although \textbf{the algorithm is the same}, in the actual implementation we use \texttt{PathPoint} objects, which represent the movement of the drone and hence would correspond to the edges of the tree, rather than nodes as described above. However, \texttt{PathPoint} stores the nodes in \texttt{endPos} (and its parent in \texttt{startPos}) and attributes such as \texttt{distanceScore} correspond to the position of \texttt{endPos} and so the implementation details of the algorithm is very similar.
+It is also worth mentioning here, that although \textbf{the algorithm is the same}, in the actual implementation we use \texttt{PathPoint} objects, which represent the movement of the drone and hence would correspond to the edges of the tree, rather than nodes as described above. However, \texttt{PathPoint} stores the child node in \texttt{endPos} (and its parent in \texttt{startPos}) and attributes such as \texttt{distanceScore} correspond to the position of \texttt{endPos}, so the implementation details of the algorithm is very similar.
 
 \section{Class Documentation}
 
 \subsection{\texttt{uk.ac.ed.inf.aqmaps}}
 
-\addcontentsline{toc}{subsubsection}{\texttt{App}}
+
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{App}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{App}} \\
     
@@ -202,7 +202,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         & \begin{minipage}{0.9\textwidth}
             This method is the main entry point into the application. \\
         
-            It is responsible for pulling in the different components defined in the \texttt{drone} and \texttt{webserver} sub-packages to provide the expected top-level behaviour of the application (i.e. process the command-line inputs, get information from the web server, calculate the route of the drone and save this information in the two output files). \\
+            It is responsible for pulling in the different components defined in the \texttt{drone} and \texttt{webserver} sub-packages to provide the expected top-level behaviour of the application (i.e. process the command-line inputs, get information from the web server, calculate the route of the drone and save this information to the two output files). \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -217,9 +217,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \subsection{\texttt{uk.ac.ed.inf.aqmaps.webserver}}
 
 
-
-\addcontentsline{toc}{subsubsection}{\texttt{WebServer}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{WebServer}}
     \begin{longtable}{ |p{2em} c c| } \hline
     \multicolumn{3}{ |c| }{\texttt{WebServer}} \\
     
@@ -229,7 +229,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
     
     \multicolumn{3}{|l|}{
         \begin{minipage}{{\textwidth}}
-            This class encapsulates methods relating to communication with the web server. The class attributes are \texttt{client} which stores the \texttt{HttpClient} that sends the HTTP get requests (this is static because we want to prevent multiple instances of the client being created), \texttt{noFlyZonePath} which stores the file path to the \texttt{geojson} file for the no-fly-zones, \texttt{protocol} which stores the protocol to use in the URI (e.g. http), \texttt{host} which stores the host name of the web server and \texttt{port} which stores the port number to access.
+            This class encapsulates methods relating to communication with the web server. The class attributes are \texttt{client} which stores the \texttt{HttpClient} that sends the HTTP GET requests (this is static because we want to prevent multiple instances of the client being created), \texttt{noFlyZonePath} which stores the file path to the \texttt{geojson} file for the no-fly-zones, \texttt{protocol} which stores the protocol to use in the URI (e.g. http), \texttt{host} which stores the host name of the web server and \texttt{port} which stores the port number to access.
         \end{minipage} 
     } \\
     
@@ -269,9 +269,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         
         Parameters:
         \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-            \item \texttt{year}: year of the desired date
-            \item \texttt{month}: month of the desired date
-            \item \texttt{day}: day of the desired date
+            \item \texttt{year}: year of the desired date (must be 4 digits e.g. ``2020")
+            \item \texttt{month}: month of the desired date (must be 2 digits e.g. ``02")
+            \item \texttt{day}: day of the desired date (must be 2 digits e.g. ``02")
         \end{itemize}
         
         \vspace{1em}
@@ -299,9 +299,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         
         Parameters:
         \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-            \item \texttt{year}: year of the desired date
-            \item \texttt{month}: month of the desired date
-            \item \texttt{day}: day of the desired date
+            \item \texttt{year}: year of the desired date (must be 4 digits e.g. ``2020")
+            \item \texttt{month}: month of the desired date (must be 2 digits e.g. ``02")
+            \item \texttt{day}: day of the desired date (must be 2 digits e.g. ``02")
         \end{itemize}
         
         \vspace{1em}
@@ -374,7 +374,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
     } \\
     
     & \begin{minipage}{0.9\textwidth}
-        This method is a utility function that sends a HTTP get request to the web server asking for the specified file and returns the \texttt{HttpResponse<String>} object if the status code is 200, otherwise an exception is thrown. \\
+        This method is a utility function that sends a HTTP GET request to the web server asking for the resource at the given file path and returns the \texttt{HttpResponse<String>} object if the status code is 200, otherwise an exception is thrown. \\
         
         Parameters:
         \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -398,8 +398,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \vspace{-2.5em}
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{What3Words}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{What3Words}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{What3Words}} \\
     
@@ -421,8 +422,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \vspace{-1.5em}
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{SendRequestException}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{SendRequestException}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{SendRequestException}} \\
     
@@ -432,7 +434,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
     
         \multicolumn{3}{|l|}{
             \begin{minipage}{{\textwidth}}
-                This class provides a layer of abstraction over all errors that relate to the creation and sending of a HTTP request to the target web server.
+                This class provides a layer of abstraction over all exceptions that relate to the creation and sending of a HTTP request to the target web server.
             \end{minipage} 
         } \\
     
@@ -446,7 +448,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Creates and initializes a \texttt{SendRequestException} with the provided message. \\
+            Creates and initializes a \texttt{SendRequestException} object with the provided message. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -462,8 +464,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{ResponseException}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{ResponseException}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{ResponseException}} \\
     
@@ -473,7 +476,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
     
         \multicolumn{3}{|l|}{
             \begin{minipage}{{\textwidth}}
-                This class provides a layer of abstraction over all errors that relate to the HTTP response (or lack thereof) from the target web server.
+                This class provides a layer of abstraction over all exceptions that relate to the HTTP response (or lack thereof) from the target web server.
             \end{minipage} 
         } \\
     
@@ -487,7 +490,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Creates and initializes a \texttt{ResponseException} with the provided message. \\
+            Creates and initializes a \texttt{ResponseException} object with the provided message. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -498,13 +501,14 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \end{center}
 
 
-
+\newpage
 \subsection{\texttt{uk.ac.ed.inf.aqmaps.drone}}
 
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{Drone}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{Drone}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{Drone}} \\
     
@@ -515,14 +519,14 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         \multicolumn{3}{|l|}{
             \begin{minipage}{{\textwidth}}
                 This is an \textbf{abstract class} which encapsulates methods and attributes related to the physical characteristics that affect the behaviour of the drone. It includes attributes that define the confinement area as a set of boundaries or line segments (using the \texttt{java.awt.geom} package) as well as other constants defined in the specification (i.e max number of moves, the maximum range of a sensor reading, maximum allowable distance from start position when returning and distance of each move of the drone). It also stores some non-static attributes such as \texttt{battery} which keeps track of the battery level of the drone, \texttt{boundaryLines} which stores all the line segments which the drone cannot intersect, and \texttt{noFlyZones} which stores the no-fly-zones.
-            \end{minipage} 
+            \end{minipage}  
         } \\
     
         & & \\
     
         \multicolumn{3}{|l|}{
             \begin{minipage}{{0.9\textwidth}}
-                \mint[fontsize=\small]{java}|Drone(FeatureCollection noFlyZones)|
+                \mint[fontsize=\small]{java}|public Drone(FeatureCollection noFlyZones)|
                 \vspace{-0.5em}
             \end{minipage}
         } \\
@@ -532,7 +536,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-                \item \texttt{noFlyZones}: the set of no-fly-zones the drone is not allowed to cross while flying
+                \item \texttt{noFlyZones}: the set of no-fly-zones (must be \texttt{Feature}s of type \texttt{Polygon})
             \end{itemize}
         \end{minipage} & \\
         
@@ -565,11 +569,11 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-             Returns an array of line segments that describe the boundaries of the no-fly-zones.\\
+             Returns an array of line segments that describe the boundaries of the given no-fly-zones.\\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-                \item \texttt{noFlyZones}: the set of no-fly-zones the drone is not allowed to cross while flying
+                \item \texttt{noFlyZones}: the set of no-fly-zones (must be \texttt{Feature}s of type \texttt{Polygon})
             \end{itemize}
         \end{minipage} & \\
         
@@ -621,8 +625,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{AStarDrone}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{AStarDrone}}
     \begin{longtable}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{AStarDrone}} \\
     
@@ -652,7 +657,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
                 \item \texttt{sensors}: the list of sensors the drone should visit on its route
                 \item \texttt{startPos}: the starting position of the drone 
-                \item \texttt{noFlyZones}: the no-fly-zones the drone must avoid
+                \item \texttt{noFlyZones}: the set of no-fly-zones (must be \texttt{Feature}s of type \texttt{Polygon})
             \end{itemize}
         \end{minipage} & \\ 
         
@@ -775,7 +780,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Returns the \texttt{PathPoint} object with the lowest \texttt{distanceScore}. In other words, it returns the \texttt{PathPoint} object that takes us closest to the target destination. The measure of distance is dependent on the drone control algorithm (see Section \ref{drone_alg} for details on the current definition).\\
+            Returns the \texttt{PathPoint} object with the lowest \texttt{distanceScore}. The measure of \texttt{distanceScore} is dependent on the drone control algorithm (see Section \ref{drone_alg} for details on the current definition).\\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -813,8 +818,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{Route}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{Route}}
     \begin{longtable}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{Route}} \\
     
@@ -844,7 +850,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
                 \item \texttt{dronePath}: the route taken by the drone
                 \item \texttt{skippedSensors}: the list of sensors not visited by the drone on its route
-                \item \texttt{noFlyZones}: the list of no-fly-zones
+                \item \texttt{noFlyZones}: the set of no-fly-zones
             \end{itemize}
         \end{minipage} & \\
         
@@ -858,16 +864,18 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Saves the created GeoJSON map to a file of the given name. Note that \texttt{buildMap} must be run first, or a \texttt{RuntimeException} is thrown. This is because the map has some customizable features that the user needs to decide on (i.e displaying the no-fly-zones or not).\\
+            Saves the created GeoJSON map to a file of the given name. Note that \texttt{buildMap} must be run first, or a \texttt{RuntimeException} is thrown. This is because the map has some customizable features that the caller needs to decide on (i.e displaying the no-fly-zones or not).\\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
                 \item \texttt{fileName}: name of the file to be created
             \end{itemize}
             
+            \vspace{1em}
+            
             Throws:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-                \item \texttt{IOException}: if I/O error occurs (thrown by \texttt{FileWriter})
+                \item \texttt{IOException}: if an I/O error occurs
             \end{itemize}
         \end{minipage} & \\
         
@@ -887,10 +895,12 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
                 \item \texttt{fileName}: name of the file to be created
             \end{itemize}
+      
+            \vspace{1em}
             
             Throws:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
-                \item \texttt{IOException}: if I/O error occurs (thrown by \texttt{FileWriter})
+                \item \texttt{IOException}: if an I/O error occurs
             \end{itemize}
         \end{minipage} & \\
         
@@ -904,7 +914,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Creates the GeoJSON map which is a \texttt{FeatureCollection} that includes the flightpath as a \texttt{Feature} of type \texttt{LineString}, the sensors as \texttt{Feature}s of type \texttt{Point} and optionally the no-fly-zones as \texttt{Feature}s of type \texttt{Polygon}. \\
+            Creates the GeoJSON map which is a \texttt{FeatureCollection} that includes the flightpath as a \texttt{Feature} of type \texttt{LineString}, the sensors as \texttt{Feature}s of type \texttt{Point} and optionally the no-fly-zones as \texttt{Feature}s of type \texttt{Polygon}. The generated map is stored in the \texttt{map} class attribute. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -922,7 +932,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            A utility function that returns the list of visited sensors from \texttt{dronePath} (set in the constructor).
+            A utility function that returns the list of visited sensors from the class attribute \texttt{dronePath}.
         \end{minipage} & \\
         
         & & \\
@@ -948,7 +958,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Creates and returns the given sensor as a \texttt{Feature} of type \texttt{Point}. This includes adding various \texttt{Feature} properties relating to the symbol and color of the \texttt{Feature} as per the specification. \texttt{sensor} must have all its attributes populated, otherwise the returned \texttt{Feature} will not be useful. \\
+            Creates and returns the given sensor as a \texttt{Feature} of type \texttt{Point}. This includes adding various \texttt{Feature} properties relating to the symbol and color of the \texttt{Feature} as per the specification. \texttt{sensor} must have all its attributes populated. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -967,7 +977,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Returns the color, in hexadecimal, determined by the sensor information and whether the sensor was visited or not (as per the specification). \\
+            Returns the color, in hexadecimal, determined by the sensor information and whether the sensor was visited or not as per the specification. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -1004,8 +1014,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 
 
 
-\addcontentsline{toc}{subsubsection}{\texttt{Sensor}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{Sensor}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{Sensor}} \\
     
@@ -1028,9 +1039,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \vspace{-1.5em}
 
 
-
-\addcontentsline{toc}{subsubsection}{\texttt{PathPoint}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{PathPoint}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{PathPoint}} \\
     
@@ -1064,9 +1075,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \vspace{-1.5em}
 
 
-
-\addcontentsline{toc}{subsubsection}{\texttt{Coordinates}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{Coordinates}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{Coordinates}} \\
     
@@ -1120,9 +1131,9 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
 \vspace{-1.5em}
 
 
-
-\addcontentsline{toc}{subsubsection}{\texttt{BatteryLimitException}}
 \begin{center}
+    \phantomsection
+    \addcontentsline{toc}{subsubsection}{\texttt{BatteryLimitException}}
     \begin{tabular}{ |p{2em} c c| } \hline
         \multicolumn{3}{ |c| }{\texttt{BatteryLimitException}} \\
     
@@ -1146,7 +1157,7 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
         } \\
     
         & \begin{minipage}{0.9\textwidth}
-            Creates and initializes a \texttt{BatteryLimitException} with the provided message. \\
+            Creates and initializes a \texttt{BatteryLimitException} object with the provided message. \\
         
             Parameters:
             \begin{itemize}[label={}, topsep=0pt, itemsep=0pt]
@@ -1156,23 +1167,24 @@ It is also worth mentioning here, that although \textbf{the algorithm is the sam
     \end{tabular}
 \end{center}
 
-
+\newpage
 \section{References}
-The following sources were used either to provide inspiration for my implementation or to directly aid in it (e.g. through example code or pseudocode):
+The following sources were used to provide inspiration for my implementation:
 \begin{enumerate}
-    \item \href{https://en.wikipedia.org/wiki/Motion_planning#Grid-based_search}{Wikipedia - Motion planning}
-    \item \href{https://en.wikipedia.org/wiki/Any-angle_path_planning}{Wikipedia - Any-angle path planning}
-    \item \href{https://en.wikipedia.org/wiki/A*_search_algorithm#}{Wikipedia - A* search algorithm}
-    \item \href{https://en.wikipedia.org/wiki/Best-first_search}{Wikipedia - Best-first search}
-    \item \href{https://stackoverflow.com/questions/16069106/how-to-compare-two-java-objects}{Stackoverflow - How to compare two java objects}
+    \item \href{https://en.wikipedia.org/wiki/Motion_planning#Grid-based_search}{Wikipedia - Motion planning} (first accessed October 2020)
+    \item \href{https://en.wikipedia.org/wiki/Any-angle_path_planning}{Wikipedia - Any-angle path planning} (first accessed October 2020)
+    \item \href{https://en.wikipedia.org/wiki/A*_search_algorithm#}{Wikipedia - A* search algorithm} (first accessed November 2020)
+    \item \href{https://en.wikipedia.org/wiki/Best-first_search}{Wikipedia - Best-first search} (first accessed November 2020)
+    \item \href{https://stackoverflow.com/questions/16069106/how-to-compare-two-java-objects}{Stackoverflow - How to compare two java objects} (first accessed November 2020)
 \end{enumerate}
 
-The following sources were used to help with the report either for the figures or for the formatting:
+The following sources were used to help with the report (e.g. for the figures):
 \begin{enumerate}
     \item \href{https://geojson.io}{geojson.io}
     \item \href{https://creately.com/}{Creately}
-    \item \href{https://en.wikipedia.org/wiki/Class_diagram#Dependency}{Wikipedia - Class diagram}
-    \item \href{https://tex.stackexchange.com/questions/37581/latex-figures-side-by-side#37597}{Tex StackExchange - LaTeX figures side by side}
-    \item \href{https://tex.stackexchange.com/a/847}{Tex StackExchange - Remove ugly borders around clickable cross-references and hyperlinks}
+    \item \href{https://en.wikipedia.org/wiki/Class_diagram#Dependency}{Wikipedia - Class diagram} (first accessed December 2020)
+    \item \href{https://en.wikipedia.org/wiki/Travelling_salesman_problem}{Wikipedia - Travelling salesman problem} (first accessed December 2020)
+    \item \href{https://tex.stackexchange.com/questions/37581/latex-figures-side-by-side#37597}{Tex StackExchange - LaTeX figures side by side} (first accessed December 2020)
+    \item \href{https://tex.stackexchange.com/a/847}{Tex StackExchange - Remove ugly borders around clickable cross-references and hyperlinks} (first accessed December 2020)
 \end{enumerate}
 \end{document}
